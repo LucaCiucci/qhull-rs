@@ -2,6 +2,7 @@
 name = "qhull-sys"
 version.workspace = true
 edition.workspace = true
+license.workspace = true
 description = "Rust bindings to Qhull"
 readme = "README.md"
 exclude = [
