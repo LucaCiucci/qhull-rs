@@ -6,16 +6,23 @@ This is a safe wrapper around the `qhull-sys` crate, it is not feature complete 
 > ⚠️**Warning**⚠️  
 > Errors are not handled properly yet.
 
+<!--
 ## Usage
 
 Add this to your `Cargo.toml`:
 
 ```toml
-[dependencies]
 qhull = "0.1"
 ```
 
-### Examples
+For the current development version:
+```toml
+[dependencies]
+qhull = { git = "https://github.com/LucaCiucci/qhull-rs" }
+```
+-->
+
+## Examples
 
 This creates a convex hull of a set of points in 2D:
 ```rust
