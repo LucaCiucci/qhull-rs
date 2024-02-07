@@ -1,7 +1,22 @@
 [package]
 name = "qhull-sys"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
+description = "Rust bindings to Qhull"
+readme = "README.md"
+exclude = [
+    "/qhull",
+]
+include = [
+    "/qhull/src/libqhull_r/*",
+    "/qhull/COPYING.txt",
+    "/src/",
+    "/Cargo.toml",
+    "/README.md",
+    "/LICENSE",
+    "/build.rs",
+    "/wrapper.h",
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
