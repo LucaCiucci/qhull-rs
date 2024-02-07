@@ -8,12 +8,14 @@ name = "qhull"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+keywords.workspace = true
 description = "Rust bindings to Qhull"
 readme = "README.md"
 
 [workspace.package]
 edition = "2021"
-version = "0.1.0"
+version = "0.1.1"
 license = "MIT"
 repository = "https://github.com/LucaCiucci/qhull-rs"
 keywords = ["qhull", "geometry", "convex-hull", "delaunay", "voronoi"]

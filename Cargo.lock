@@ -204,14 +204,14 @@ dependencies = [
 
 [[package]]
 name = "qhull"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "qhull-sys",
 ]
 
 [[package]]
 name = "qhull-sys"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bindgen",
  "cc",
