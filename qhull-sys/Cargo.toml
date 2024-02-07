@@ -8,5 +8,9 @@ edition = "2021"
 [dependencies]
 
 [build-dependencies]
-bindgen = { workspace = true }
-cc = { workspace = true }
+bindgen = "0.69.4"
+cc = "1.0.83"
+
+[features]
+default = []
+all-headers = []

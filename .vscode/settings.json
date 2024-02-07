@@ -1,0 +1,28 @@
+{
+    "cSpell.words": [
+        "acrt",
+        "errfile",
+        "libqhull",
+        "longjmp",
+        "Oerrexit",
+        "outfile",
+        "qdelaun",
+        "qdelaunay",
+        "setjmp",
+        "simplicial"
+    ],
+    "files.associations": {
+        "*.excalidraw": "json",
+        "*.excalidrawlib": "json",
+        "*.json": "jsonc",
+        "compare": "c",
+        "memory": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c",
+        "xmemory": "c",
+        "xstring": "c",
+        "xtr1common": "c",
+        "xutility": "c"
+    }
+}

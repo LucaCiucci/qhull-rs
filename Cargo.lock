@@ -205,6 +205,9 @@ dependencies = [
 [[package]]
 name = "qhull"
 version = "0.1.0"
+dependencies = [
+ "qhull-sys",
+]
 
 [[package]]
 name = "qhull-sys"
