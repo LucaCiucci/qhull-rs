@@ -53,3 +53,7 @@ Relevant links:
 - https://docs.rs/setjmp/0.1.4/setjmp/index.html
 
 To walk around [\#2625](https://github.com/rust-lang/rfcs/issues/2625) we might use some custom C code, but this would require some work I'm not willing to do right now.
+
+## License
+
+This crate uses Qhull, please refer to the [Qhull license](http://www.qhull.org/COPYING.txt) for more information when using this crate.
