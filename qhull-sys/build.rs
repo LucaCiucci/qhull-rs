@@ -12,13 +12,10 @@ fn main() {
 
     let all_headers = std::env::var("CARGO_FEATURE_ALL_HEADERS").is_ok();
 
-    let src = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join(Path::new(QHULL_SRC_DIR));
-    println!("src: {:?}", src);
-
     let mut sources = vec![];
     let mut headers = vec![];
 
-    for entry in read_dir(src).unwrap() {
+    for entry in read_dir(QHULL_SRC_DIR).unwrap() {
         let entry = entry.unwrap();
         let path = entry.path();
         if path.is_file() {
