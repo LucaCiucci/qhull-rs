@@ -16,6 +16,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     for simplex in qh.simplices() {
         let vertices = simplex
             .vertices()
+            .iter()
             .map(|v| v.id())
             .collect::<Vec<_>>();
     

@@ -50,7 +50,7 @@ impl<'a> Qh<'a> {
     /// See the `examples` directory for an example.
     pub fn new_delaunay<I>(
         points: impl IntoIterator<Item = I>,
-    ) -> Result<Self, QhError>
+    ) -> Result<Self, QhError<'static>>
     where
         I: IntoIterator<Item = f64>,
     {
@@ -139,10 +139,10 @@ impl<'a> Qh<'a> {
     ///     }).expect("qhull output check failed");
     /// }
     /// ```
-    pub unsafe fn try_on_qh<R>(
-        qh: &mut Qh,
+    pub unsafe fn try_on_qh<'b, R>(
+        qh: &'b mut Qh,
         f: impl FnOnce(&mut sys::qhT) -> R,
-    ) -> Result<R, QhError> {
+    ) -> Result<R, QhError<'b>> {
         unsafe {
             QhError::try_on_raw(&mut qh.qh, &mut qh.buffers.err_file, f)
         }

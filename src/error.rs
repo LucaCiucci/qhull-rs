@@ -1,6 +1,6 @@
 use std::{error::Error, fmt::Display};
 
-use crate::{sys, tmp_file::TmpFile};
+use crate::{helpers::QhTypeRef, sys, tmp_file::TmpFile, Face, Ridge, Vertex};
 
 macro_rules! define_error_kinds {
     (
@@ -49,24 +49,62 @@ define_error_kinds!{
 }
 
 #[derive(Debug, Clone)]
-pub struct QhError {
+pub struct QhError<'a> {
     pub kind: QhErrorKind,
     pub error_message: Option<String>,
+    pub face: Option<Face<'a>>,
+    pub ridge: Option<Ridge<'a>>,
+    pub vertex: Option<Vertex<'a>>,
 }
 
-impl Display for QhError {
+impl<'a> Display for QhError<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Qhull error: {:?} (#{})", self.kind, self.kind.error_code())?;
         if let Some(msg) = &self.error_message {
             write!(f, "\n{}", msg)?;
         }
+        if let Some(face) = &self.face {
+            write!(f, "\nFace: {:?}", face)?;
+        }
+        if let Some(ridge) = &self.ridge {
+            write!(f, "\nRidge: {:?}", ridge)?;
+        }
+        if let Some(vertex) = &self.vertex {
+            write!(f, "\nVertex: {:?}", vertex)?;
+        }
         Ok(())
     }
 }
 
-impl Error for QhError {}
+impl<'a> Error for QhError<'a> {}
 
-impl QhError {
+impl<'a> QhError<'a> {
+    pub fn into_static(self) -> QhError<'static> {
+        let QhError {
+            kind,
+            error_message,
+            face,
+            ridge,
+            vertex,
+        } = self;
+        if let Some(face) = face {
+            eprintln!("During conversion to static, a face was discarded: {:?}", face);
+        }
+        if let Some(ridge) = ridge {
+            eprintln!("During conversion to static, a ridge was discarded: {:?}", ridge);
+        }
+        if let Some(vertex) = vertex {
+            eprintln!("During conversion to static, a vertex was discarded: {:?}", vertex);
+        }
+        QhError {
+            kind,
+            error_message,
+            face: None,
+            ridge: None,
+            vertex: None,
+        }
+    }
+
     /// Try to run a function on a raw qhT instance and handle errors.
     ///
     /// # Implementation details
@@ -80,11 +118,11 @@ impl QhError {
     /// - <https://en.cppreference.com/w/c/program/longjmp>
     /// - <https://learn.microsoft.com/en-en/cpp/cpp/using-setjmp-longjmp?view=msvc-170>
     /// - <http://groups.di.unipi.it/~nids/docs/longjump_try_trow_catch.html>
-    pub unsafe fn try_on_raw<R, F>(
+    pub unsafe fn try_on_raw<'b, R, F>(
         qh: &mut sys::qhT,
         err_file: &mut Option<TmpFile>,
         f: F,
-    ) -> Result<R, QhError>
+    ) -> Result<R, QhError<'b>>
     where
         F: FnOnce(&mut sys::qhT) -> R,
     {
@@ -129,6 +167,9 @@ impl QhError {
             Err(QhError {
                 kind,
                 error_message: msg,
+                face: if qh.tracefacet.is_null() { None } else { Some(Face::from_ptr(qh.tracefacet, qh.input_dim as _)) }, // TODO is this dim correct?
+                ridge: if qh.traceridge.is_null() { None } else { Some(Ridge::from_ptr(qh.traceridge, qh.input_dim as _)) }, // TODO is this dim correct?
+                vertex: if qh.tracevertex.is_null() { None } else { Some(Vertex::from_ptr(qh.tracevertex, qh.input_dim as _)) } // TODO is this dim correct?
             })
         }
     }

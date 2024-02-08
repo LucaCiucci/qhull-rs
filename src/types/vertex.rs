@@ -1,14 +1,19 @@
 
 use std::{fmt::Debug, marker::PhantomData};
 
-use crate::{helpers::QhTypeRef, sys};
+use crate::{helpers::QhTypeRef, sys, Set};
 
 #[derive(Clone, Copy)]
 pub struct Vertex<'a>(*mut sys::vertexT, usize, PhantomData<&'a ()>);
 
 impl<'a> Debug for Vertex<'a> {
-    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Vertex")
+            .field("id", &self.id())
+            .field("visit_id", &self.visit_id())
+            .field("point", &self.point())
+            .field("neighbors_count", &self.neighbors().iter().count())
+            .finish()
     }
 }
 
@@ -18,21 +23,40 @@ impl<'a> Vertex<'a> {
         Self(vertex, dim, PhantomData)
     }
 
-    pub unsafe fn raw_ptr(&self) -> *mut sys::vertexT {
-        self.0
-    }
-
-    pub unsafe fn raw_ref(&self) -> &sys::vertexT {
-        unsafe { &*self.0 }
-    }
-
     pub fn dim(&self) -> usize {
         self.1
+    }
+
+    pub fn next(&self) -> Vertex {
+        let vertex = unsafe { self.raw_ref() };
+        Self::new(vertex.next, self.dim())
+    }
+
+    pub fn previous(&self) -> Vertex {
+        let vertex = unsafe { self.raw_ref() };
+        Self::new(vertex.previous, self.dim())
+    }
+
+    pub fn point(&self) -> &[f64] {
+        unsafe {
+            let vertex = self.raw_ref();
+            std::slice::from_raw_parts(vertex.point, self.dim())
+        }
     }
 
     pub fn id(&self) -> u32 {
         let vertex = unsafe { self.raw_ref() };
         vertex.id
+    }
+
+    pub fn visit_id(&self) -> u32 {
+        let vertex = unsafe { self.raw_ref() };
+        vertex.visitid
+    }
+
+    pub fn neighbors(&self) -> Set<Vertex> {
+        let vertex = unsafe { self.raw_ref() };
+        Set::new(vertex.neighbors, self.dim())
     }
 }
 

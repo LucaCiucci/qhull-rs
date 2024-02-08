@@ -26,7 +26,7 @@ pub struct QhBuilder {
     capture_stdout: bool,
     capture_stderr: bool,
     compute: bool,
-    configs: Vec<Box<dyn Fn(&mut Qh) -> Result<(), QhError>>>,
+    configs: Vec<Box<dyn for<'a> Fn(&'a mut Qh) -> Result<(), QhError<'a>>>>,
 }
 
 impl QhBuilder {
@@ -135,7 +135,7 @@ impl QhBuilder {
             };
 
             for config in self.configs {
-                config(&mut qh)?;
+                config(&mut qh).map_err(|e| e.into_static())?;
             }
 
             Qh::try_on_qh(
@@ -149,11 +149,11 @@ impl QhBuilder {
                         false as _,
                     );
                 },
-            )?;
+            ).map_err(|e| e.into_static())?;
 
             if self.compute {
-                qh.compute()?;
-                qh.check_output()?;
+                qh.compute().map_err(|e| e.into_static())?;
+                qh.check_output().map_err(|e| e.into_static())?;
             }
 
             Ok(qh)
@@ -183,7 +183,7 @@ impl QhBuilder {
         self,
         dim: usize,
         points: impl ToOwned<Owned = Vec<f64>>,
-    ) -> Result<Qh<'static>, QhError> {
+    ) -> Result<Qh<'static>, QhError<'static>> {
         let mut points = points.to_owned();
         let points_ptr = points.as_mut_ptr();
         let mut qh: Qh<'static> = self.build(dim, unsafe {
@@ -212,7 +212,7 @@ impl QhBuilder {
     pub fn build_from_iter<I>(
         self,
         points: impl IntoIterator<Item = I>,
-    ) -> Result<Qh<'static>, QhError>
+    ) -> Result<Qh<'static>, QhError<'static>>
     where
         I: IntoIterator<Item = f64>,
     {
@@ -240,7 +240,7 @@ impl QhBuilder {
     /// ```
     pub unsafe fn with_configure(
         mut self,
-        configurator: impl Fn(&mut Qh) -> Result<(), QhError> + 'static,
+        configurator: impl for<'a> Fn(&'a mut Qh) -> Result<(), QhError<'a>> + 'static,
     ) -> Self {
         self.configs.push(Box::new(configurator));
         self

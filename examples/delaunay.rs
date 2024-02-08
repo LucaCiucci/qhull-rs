@@ -10,12 +10,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     ])?;
 
     for simplex in qh.simplices() {
-        println!("{:?}", simplex.vertices().map(|v| v.id()).collect::<Vec<_>>());
+        println!("{:?}", simplex.vertices().iter().map(|v| v.id()).collect::<Vec<_>>());
     }
 
     let mut simplices = qh
         .simplices()
-        .map(|f| f.vertices().map(|v| v.id() - 1).collect::<Vec<_>>())
+        .map(|f| f.vertices().iter().map(|v| v.id() - 1).collect::<Vec<_>>())
         .collect::<Vec<_>>();
 
     simplices.iter_mut().for_each(|s| s.sort());
