@@ -1,22 +1,13 @@
 
 #include "./error_handling.h"
 
-// The C++ code we want to reproduce:
-// #define QH_TRY_NO_THROW_(qh) \
-     int QH_TRY_status; \
-     if(qh->NOerrexit){ \
-         qh->NOerrexit= False; \
-         QH_TRY_status= setjmp(qh->errexit); \
-     }else{ \
-         QH_TRY_status= QH_TRY_ERROR; \
-     } \
-     if(!QH_TRY_status)
-
 int qhull_sys__try_on_qh(
     qhT* qh,
     void (*fn)(qhT* qh, void* data),
     void* data
 ) {
+    // See definition of QH_TRY_NO_THROW_ for reference
+
     if (!qh || !fn) {
         printf("qh or fn is NULL\n");
         return QH_TRY_ERROR;
