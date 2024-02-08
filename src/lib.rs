@@ -13,8 +13,6 @@ mod error; pub use error::*;
 mod builder; pub use builder::*;
 mod types; pub use types::*;
 
-
-
 /// A Qhull instance
 pub struct Qh<'a> {
     qh: sys::qhT,
@@ -99,11 +97,55 @@ impl<'a> Qh<'a> {
         }
     }
 
+    /// Try a function on the qhull instance
+    ///
+    /// This function provides a way to access and possibly modify the qhull instance.  
+    /// You should use only this function to access the qhull instance, as it provides a way to handle errors.  
+    ///
+    /// # Example
+    /// ```
+    /// # use qhull::*;
+    /// # let mut qh = Qh::builder()
+    /// #     .build_from_iter([
+    /// #         [0.0, 0.0],
+    /// #         [1.0, 0.0],
+    /// #         [0.0, 1.0],
+    /// #         [0.25, 0.25]
+    /// #    ]).unwrap();
+    /// unsafe {
+    ///     Qh::try_on_qh(&mut qh, |qh| {
+    ///         sys::qh_qhull(qh)
+    ///     }).unwrap();
+    /// }
+    /// ```
+    ///
+    /// It is advised to call as few Qhull fallible functions as possible in order to better locate the source of the error and avoid mistakes. For example:
+    /// ```
+    /// # use qhull::*;
+    /// # let mut qh = Qh::builder()
+    /// #     .build_from_iter([
+    /// #         [0.0, 0.0],
+    /// #         [1.0, 0.0],
+    /// #         [0.0, 1.0],
+    /// #         [0.25, 0.25]
+    /// #    ]).unwrap();
+    /// unsafe {
+    ///     Qh::try_on_qh(&mut qh, |qh| {
+    ///         sys::qh_qhull(qh)
+    ///     }).expect("qhull computation failed");
+    ///
+    ///     Qh::try_on_qh(&mut qh, |qh| {
+    ///         sys::qh_check_output(qh)
+    ///     }).expect("qhull output check failed");
+    /// }
+    /// ```
     pub unsafe fn try_on_qh<R>(
         qh: &mut Qh,
         f: impl FnOnce(&mut sys::qhT) -> R,
     ) -> Result<R, QhError> {
-        QhError::try_on_raw(&mut qh.qh, &mut qh.buffers.err_file, f)
+        unsafe {
+            QhError::try_on_raw(&mut qh.qh, &mut qh.buffers.err_file, f)
+        }
     }
 }
 

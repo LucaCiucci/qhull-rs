@@ -67,6 +67,19 @@ impl Display for QhError {
 impl Error for QhError {}
 
 impl QhError {
+    /// Try to run a function on a raw qhT instance and handle errors.
+    ///
+    /// # Implementation details
+    ///
+    /// Qhull uses [`setjmp`/`longjmp`](https://en.cppreference.com/w/c/program/longjmp) for error handling, this is not currently supported in Rust.
+    /// For this reason, the actual error handling is done in C and this function is just a wrapper around the C function [`qhull_sys__try_on_qh`](sys::qhull_sys__try_on_qh).
+    ///
+    /// Relevant links:
+    /// - <https://github.com/rust-lang/rfcs/issues/2625>: RFC for adding support for `setjmp`/`longjmp` to Rust, describes the current problems with `setjmp`/`longjmp` in Rust.
+    /// - <https://docs.rs/setjmp/0.1.4/setjmp/index.html>
+    /// - <https://en.cppreference.com/w/c/program/longjmp>
+    /// - <https://learn.microsoft.com/en-en/cpp/cpp/using-setjmp-longjmp?view=msvc-170>
+    /// - <http://groups.di.unipi.it/~nids/docs/longjump_try_trow_catch.html>
     pub unsafe fn try_on_raw<R, F>(
         qh: &mut sys::qhT,
         err_file: &mut Option<TmpFile>,

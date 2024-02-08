@@ -17,7 +17,7 @@ For the current development version:
 qhull = { git = "https://github.com/LucaCiucci/qhull-rs" }
 ```
 
-## Examples
+### Examples
 
 This creates a convex hull of a set of points in 2D:
 ```rust
@@ -49,16 +49,6 @@ See the `examples` directory for more examples, you can run them with `cargo run
 ```sh
 cargo run --example delaunay
 ```
-
-## Error handling
-
-Qhull uses `setjmp`/`longjmp` for error handling, this is not currently supported in Rust, so errors are not handled properly yet.
-
-Relevant links:
-- https://github.com/rust-lang/rfcs/issues/2625
-- https://docs.rs/setjmp/0.1.4/setjmp/index.html
-
-To walk around [\#2625](https://github.com/rust-lang/rfcs/issues/2625) we might use some custom C code, but this would require some work I'm not willing to do right now.
 
 ## License
 
