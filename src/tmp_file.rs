@@ -26,7 +26,7 @@ impl TmpFile {
             }
             #[cfg(not(windows))]
             {
-                file = sys::tmpfile();
+                let file = sys::tmpfile();
                 if file.is_null() {
                     Err(io::Error::last_os_error())
                 } else {
