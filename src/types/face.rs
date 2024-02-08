@@ -1,8 +1,15 @@
-use std::marker::PhantomData;
+use std::{fmt::Debug, marker::PhantomData};
 
 use crate::{helpers::QhTypeRef, sys, Set, Vertex};
 
+#[derive(Clone, Copy)]
 pub struct Face<'a>(*mut sys::facetT, usize, PhantomData<&'a ()>);
+
+impl<'a> Debug for Face<'a> {
+    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
 
 impl<'a> Face<'a> {
     pub fn new(facet: *mut sys::facetT, dim: usize) -> Self {

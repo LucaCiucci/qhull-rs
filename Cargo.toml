@@ -15,7 +15,7 @@ readme = "README.md"
 
 [workspace.package]
 edition = "2021"
-version = "0.1.1"
+version = "0.2.0"
 license = "MIT"
 repository = "https://github.com/LucaCiucci/qhull-rs"
 keywords = ["qhull", "geometry", "convex-hull", "delaunay", "voronoi"]
@@ -33,4 +33,4 @@ include = [
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-qhull-sys = { version = "0.1.0", path = "qhull-sys" }
+qhull-sys = { version = "0.2", path = "qhull-sys" }

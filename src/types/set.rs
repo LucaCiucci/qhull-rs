@@ -1,14 +1,22 @@
 use std::ffi::c_void;
+use std::fmt::Debug;
 use std::marker::PhantomData;
 
 use crate::helpers::QhTypeRef;
 
 use crate::sys;
 
+#[derive(Clone, Copy)]
 pub struct Set<'a, T: QhTypeRef> {
     set: *mut sys::setT,
     dim: usize,
     _phantom: PhantomData<&'a T>,
+}
+
+impl<'a, T: QhTypeRef> Debug for Set<'a, T> {
+    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
 }
 
 impl<'a, T: QhTypeRef> Set<'a, T> {
@@ -26,6 +34,7 @@ impl<'a, T: QhTypeRef> Set<'a, T> {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct SetIterator<'a, T: QhTypeRef> {
     ptr: *mut *mut T::FFIType,
     dim: usize,

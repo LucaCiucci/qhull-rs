@@ -4,6 +4,9 @@ use std::{env, fs::read_dir, path::{Path, PathBuf}};
 const QHULL_SRC_DIR: &str = "qhull/src/libqhull_r";
 
 fn main() {
+    println!("cargo:rerun-if-changed=src/error_handling.h");
+    println!("cargo:rerun-if-changed=src/error_handling.c");
+
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
     let target_triple = env::var("TARGET").unwrap();
 
@@ -29,6 +32,7 @@ fn main() {
 
     cc::Build::new()
         .files(sources.iter().map(|s| format!("{}/{}", QHULL_SRC_DIR, s)))
+        .file("src/error_handling.c")
         .include(QHULL_SRC_DIR)
         .compile("qhull_r");
 
@@ -48,6 +52,8 @@ fn main() {
 
     let bindings = bindgen::Builder::default()
         .header(wrapper.to_str().unwrap())
+        .header("src/error_handling.h")
+        .use_core() // no_std
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .clang_args([
             "-Iqhull/src/libqhull_r".to_string(),

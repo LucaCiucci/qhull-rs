@@ -1,9 +1,16 @@
 
-use std::marker::PhantomData;
+use std::{fmt::Debug, marker::PhantomData};
 
 use crate::{helpers::QhTypeRef, sys};
 
+#[derive(Clone, Copy)]
 pub struct Vertex<'a>(*mut sys::vertexT, usize, PhantomData<&'a ()>);
+
+impl<'a> Debug for Vertex<'a> {
+    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
 
 impl<'a> Vertex<'a> {
     pub fn new(vertex: *mut sys::vertexT, dim: usize) -> Self {

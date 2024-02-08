@@ -1,91 +1,58 @@
 #![doc = include_str!("../README.md")]
 
-use std::{marker::PhantomData, ptr};
+use std::marker::PhantomData;
 
-use helpers::{collect_coords, prepare_delaunay_points, CollectedCoords};
+use io_buffers::IOBuffers;
+use helpers::{prepare_delaunay_points, CollectedCoords};
 pub use qhull_sys as sys;
 
 pub mod helpers;
+pub mod tmp_file;
+pub mod io_buffers;
+mod error; pub use error::*;
+mod builder; pub use builder::*;
 mod types; pub use types::*;
 
-mod builder; pub use builder::*;
 
 
 /// A Qhull instance
-///
-/// # Example
-/// ```
-/// # use qhull::*;
-/// let qh = Qh::builder(2)
-///     .build_from_iter([
-///         [0.0, 0.0],
-///         [1.0, 0.0],
-///         [0.0, 1.0],
-///         [0.25, 0.25],
-///     ]);
-///
-/// assert_eq!(qh.num_faces(), 3);
-///
-/// for simplex in qh.simplices() {
-///     println!("{:?}", simplex.vertices().map(|v| v.id()).collect::<Vec<_>>());
-/// }
-/// ```
 pub struct Qh<'a> {
     qh: sys::qhT,
     _coords_holder: Option<Vec<f64>>,
     dim: usize,
+    buffers: IOBuffers,
     phantom: PhantomData<&'a ()>,
 }
 
 impl<'a> Qh<'a> {
     /// Create a new builder
-    ///
-    /// # Example
-    /// ```
-    /// # use qhull::*;
-    /// let qh = Qh::builder(2)
-    ///     .build_from_iter([
-    ///         [0.0, 0.0],
-    ///         [1.0, 0.0],
-    ///         [0.0, 1.0],
-    ///         [0.25, 0.25],
-    ///     ]);
-    ///
-    /// assert_eq!(qh.num_faces(), 3);
-    /// ```
-    pub fn builder(dim: usize) -> QhBuilder {
-        QhBuilder::new(dim)
+    pub fn builder() -> QhBuilder {
+        QhBuilder::new()
+    }
+
+    /// Compute the convex hull
+    pub fn compute(&mut self) -> Result<(), QhError> {
+        unsafe {
+            Qh::try_on_qh(self, |qh| sys::qh_qhull(qh))
+        }
+    }
+
+    /// Check the output of the qhull instance
+    pub fn check_output(&mut self) -> Result<(), QhError> {
+        unsafe {
+            Qh::try_on_qh(
+                self,
+                |qh| sys::qh_check_output(qh),
+            )
+        }
     }
 
     /// Creates a new Delaunay triangulation
     ///
-    /// # Example
-    /// ```
-    /// # use qhull::*;
-    /// let qh = Qh::new_delaunay([
-    ///     [0.0, 0.0],
-    ///     [1.0, 0.0],
-    ///     [0.0, 1.0],
-    ///     [0.25, 0.25],
-    /// ]);
-    ///
-    /// let mut simpleces = qh
-    ///     .simplices()
-    ///     .map(|f| f.vertices().map(|v| v.id() - 1).collect::<Vec<_>>())
-    ///     .collect::<Vec<_>>();
-    ///
-    /// simpleces.iter_mut().for_each(|s| s.sort());
-    /// simpleces.sort();
-    /// assert_eq!(simpleces, vec![
-    ///     vec![0, 1, 2],
-    ///     vec![0, 1, 3],
-    ///     vec![0, 2, 3],
-    ///     vec![1, 2, 3],
-    /// ]);
-    /// ```
+    /// See the `examples` directory for an example.
     pub fn new_delaunay<I>(
         points: impl IntoIterator<Item = I>,
-    ) -> Self
+    ) -> Result<Self, QhError>
     where
         I: IntoIterator<Item = f64>,
     {
@@ -95,29 +62,21 @@ impl<'a> Qh<'a> {
             dim,
         } = prepare_delaunay_points(points);
 
-        let mut builder = QhBuilder::new(dim);
+        let mut builder = QhBuilder::new();
         unsafe {
-            builder.configure(|qh| {
-                // TODO implement all the required options and test
-                qh.DELAUNAY = true as _;
-                qh.DELAUNAY = true as _;
-                qh.SCALElast = true as _;
-                qh.TRIangulate = true as _;
-                qh.KEEPcoplanar = true as _;
+            builder = builder.with_configure(|qh| {
+                Self::try_on_qh(qh, |qh| {
+                    // TODO implement all the required options and test
+                    qh.DELAUNAY = true as _;
+                    qh.DELAUNAY = true as _;
+                    qh.SCALElast = true as _;
+                    qh.TRIangulate = true as _;
+                    qh.KEEPcoplanar = true as _;
+                })
             })
         };
 
-        builder.build_managed(coords)
-    }
-
-    /// Check the output of the qhull instance
-    ///
-    /// This function uses [`sys::qh_check_output`] to check the output of the qhull instance.
-    pub fn check(&mut self) {
-        unsafe {
-            sys::qh_check_output(&mut self.qh);
-            // TODO check error flags
-        }
+        builder.build_managed(dim, coords)
     }
 
     pub fn faces(&self) -> FaceIterator {
@@ -138,6 +97,13 @@ impl<'a> Qh<'a> {
         unsafe {
             sys::qh_get_num_facets(&self.qh) as _
         }
+    }
+
+    pub unsafe fn try_on_qh<R>(
+        qh: &mut Qh,
+        f: impl FnOnce(&mut sys::qhT) -> R,
+    ) -> Result<R, QhError> {
+        QhError::try_on_raw(&mut qh.qh, &mut qh.buffers.err_file, f)
     }
 }
 

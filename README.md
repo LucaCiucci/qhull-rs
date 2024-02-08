@@ -3,16 +3,12 @@
 
 This is a safe wrapper around the `qhull-sys` crate, it is not feature complete yet, you might prefer to use the raw `qhull-sys` crate if you need more control.
 
-> ⚠️**Warning**⚠️  
-> Errors are not handled properly yet.
-
-<!--
 ## Usage
 
 Add this to your `Cargo.toml`:
 
 ```toml
-qhull = "0.1"
+qhull = "0.2"
 ```
 
 For the current development version:
@@ -20,26 +16,29 @@ For the current development version:
 [dependencies]
 qhull = { git = "https://github.com/LucaCiucci/qhull-rs" }
 ```
--->
 
 ## Examples
 
 This creates a convex hull of a set of points in 2D:
 ```rust
-use qhull::*;
+use qhull::Qh;
 
-let qh = Qh::builder(2)
+let qh = Qh::builder()
+    .compute(true)
     .build_from_iter([
         [0.0, 0.0],
         [1.0, 0.0],
         [0.0, 1.0],
         [0.25, 0.25],
-    ]);
-
-assert_eq!(qh.num_faces(), 3);
+    ]).unwrap();
 
 for simplex in qh.simplices() {
-    println!("{:?}", simplex.vertices().map(|v| v.id()).collect::<Vec<_>>());
+    let vertices = simplex
+        .vertices()
+        .map(|v| v.id())
+        .collect::<Vec<_>>();
+
+    println!("{:?}", vertices);
 }
 ```
 

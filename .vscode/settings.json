@@ -2,10 +2,16 @@
     "cSpell.words": [
         "acrt",
         "errfile",
+        "fclose",
+        "ferr",
+        "fread",
+        "fseek",
+        "ftell",
         "libqhull",
         "longjmp",
         "Oerrexit",
         "outfile",
+        "println",
         "qdelaun",
         "qdelaunay",
         "setjmp",
@@ -23,6 +29,8 @@
         "xmemory": "c",
         "xstring": "c",
         "xtr1common": "c",
-        "xutility": "c"
+        "xutility": "c",
+        "iosfwd": "cpp",
+        "error_handling.h": "c"
     }
 }
