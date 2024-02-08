@@ -1,12 +1,21 @@
-
 /// A trait for types that can be created from a pointer to a C type and a dimension.
 pub trait QhTypeRef: Sized {
     type FFIType;
 
     fn from_ptr(ptr: *mut Self::FFIType, dim: usize) -> Option<Self>;
 
+    /// Returns a raw pointer to the C type.
+    ///
+    /// # Safety
+    /// * Users must not invalidate the instance or
+    /// make it inconsistent with the current flow of the program.
     unsafe fn raw_ptr(&self) -> *mut Self::FFIType;
 
+    /// Returns a reference to the C type.
+    ///
+    /// # Safety
+    /// * Users must not invalidate the instance or
+    /// make it inconsistent with the current flow of the program.
     unsafe fn raw_ref(&self) -> &Self::FFIType {
         unsafe { &*self.raw_ptr() }
     }
@@ -39,9 +48,7 @@ pub struct CollectedCoords {
 /// assert_eq!(count, 3);
 /// assert_eq!(dim, 2);
 /// ```
-pub fn collect_coords<I>(
-    points: impl IntoIterator<Item = I>,
-) -> CollectedCoords
+pub fn collect_coords<I>(points: impl IntoIterator<Item = I>) -> CollectedCoords
 where
     I: IntoIterator<Item = f64>,
 {
@@ -59,15 +66,11 @@ where
         coords.extend(pt.iter());
     }
     drop(pt);
-    assert!(coords.len() > 0, "no points");
+    assert!(!coords.is_empty(), "no points");
     let dim = dim.unwrap();
     debug_assert_eq!(coords.len() % dim, 0);
     let count = coords.len() / dim;
-    CollectedCoords {
-        coords,
-        count,
-        dim,
-    }
+    CollectedCoords { coords, count, dim }
 }
 
 /// Prepares points for Delaunay triangulation.
@@ -86,9 +89,7 @@ where
 /// assert_eq!(count, 3);
 /// assert_eq!(dim, 2);
 /// ```
-pub fn prepare_delaunay_points<I>(
-    points: impl IntoIterator<Item = I>,
-) -> CollectedCoords
+pub fn prepare_delaunay_points<I>(points: impl IntoIterator<Item = I>) -> CollectedCoords
 where
     I: IntoIterator<Item = f64>,
 {
@@ -133,9 +134,5 @@ where
         }
     }
 
-    CollectedCoords {
-        coords,
-        count,
-        dim,
-    }
+    CollectedCoords { coords, count, dim }
 }

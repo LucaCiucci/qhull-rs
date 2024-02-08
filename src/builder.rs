@@ -1,6 +1,12 @@
 use std::{marker::PhantomData, ptr};
 
-use crate::{helpers::{collect_coords, CollectedCoords}, io_buffers::IOBuffers, sys, Qh, QhError};
+use crate::{
+    helpers::{collect_coords, CollectedCoords},
+    io_buffers::IOBuffers,
+    sys, Qh, QhError,
+};
+
+type QhConfigurator = Box<dyn for<'b> Fn(&'b mut Qh) -> Result<(), QhError<'b>> + 'static>;
 
 /// A builder for a Qhull instance
 ///
@@ -14,10 +20,10 @@ use crate::{helpers::{collect_coords, CollectedCoords}, io_buffers::IOBuffers, s
 ///    0.25, 0.25,
 /// ];
 ///
-/// let qh = QhBuilder::new()
+/// let qh = QhBuilder::default()
 ///     .build(2, &mut points)
 ///     .unwrap();
-/// 
+///
 /// assert_eq!(qh.num_faces(), 3);
 /// ```
 #[must_use]
@@ -26,18 +32,16 @@ pub struct QhBuilder {
     capture_stdout: bool,
     capture_stderr: bool,
     compute: bool,
-    configs: Vec<Box<dyn for<'a> Fn(&'a mut Qh) -> Result<(), QhError<'a>>>>,
+    configs: Vec<QhConfigurator>,
 }
 
-impl QhBuilder {
-    /// Create a new builder
-    ///
-    /// Default settings:
-    /// * No [dimension hint](QhBuilder::dim)
-    /// * [stdout](QhBuilder::capture_stdout) is not captured
-    /// * [stderr](QhBuilder::capture_stderr) is captured
-    /// * [compute](QhBuilder::compute) is `true`
-    pub fn new() -> Self {
+/// Default settings:
+/// * No [dimension hint](QhBuilder::dim)
+/// * [stdout](QhBuilder::capture_stdout) is not captured
+/// * [stderr](QhBuilder::capture_stderr) is captured
+/// * [compute](QhBuilder::compute) is `true`
+impl Default for QhBuilder {
+    fn default() -> Self {
         Self {
             dim: None,
             capture_stdout: false,
@@ -46,7 +50,9 @@ impl QhBuilder {
             configs: Vec::new(),
         }
     }
+}
 
+impl QhBuilder {
     /// Sets a dimension hint for the data
     ///
     /// This is useful when you want to **assert** that the data
@@ -86,9 +92,9 @@ impl QhBuilder {
     ///    0.25, 0.25,
     /// ];
     ///
-    /// let qh = QhBuilder::new()
+    /// let qh = QhBuilder::default()
     ///     .build(2, &mut points).unwrap();
-    /// 
+    ///
     /// assert_eq!(qh.num_faces(), 3);
     /// ```
     ///
@@ -96,13 +102,12 @@ impl QhBuilder {
     /// * If the number of points is not divisible by the dimension
     /// * If the dimensionality of the points does not match the hint
     /// * Cannot create a tempfile for capturing stdout or stderr
-    pub fn build<'a>(
-        self,
-        dim: usize,
-        points: &'a mut [f64],
-    ) -> Result<Qh<'a>, QhError> {
+    pub fn build(self, dim: usize, points: &mut [f64]) -> Result<Qh, QhError> {
         if let Some(dim_hint) = self.dim {
-            assert_eq!(dim, dim_hint, "data dimensionality does not match hint that was given with QhBuilder::dim");
+            assert_eq!(
+                dim, dim_hint,
+                "data dimensionality does not match hint that was given with QhBuilder::dim"
+            );
         }
 
         assert_eq!(points.len() % dim, 0, "points.len() % dim != 0");
@@ -110,10 +115,7 @@ impl QhBuilder {
 
         unsafe {
             let mut qh: sys::qhT = std::mem::zeroed();
-            let buffers = IOBuffers::new(
-                self.capture_stdout,
-                self.capture_stderr,
-            );
+            let buffers = IOBuffers::new(self.capture_stdout, self.capture_stderr);
 
             // Note: this function cannot be called
             // inside of a try
@@ -138,18 +140,16 @@ impl QhBuilder {
                 config(&mut qh).map_err(|e| e.into_static())?;
             }
 
-            Qh::try_on_qh(
-                &mut qh,
-                |qh| {
-                    sys::qh_init_B(
-                        qh,
-                        points.as_ptr() as *mut f64,
-                        num_points as _,
-                        dim as _,
-                        false as _,
-                    );
-                },
-            ).map_err(|e| e.into_static())?;
+            Qh::try_on_qh(&mut qh, |qh| {
+                sys::qh_init_B(
+                    qh,
+                    points.as_ptr() as *mut f64,
+                    num_points as _,
+                    dim as _,
+                    false as _,
+                );
+            })
+            .map_err(|e| e.into_static())?;
 
             if self.compute {
                 qh.compute().map_err(|e| e.into_static())?;
@@ -169,14 +169,14 @@ impl QhBuilder {
     /// ```
     /// # use qhull::*;
     ///
-    /// let qh = QhBuilder::new()
+    /// let qh = QhBuilder::default()
     ///     .build_managed(2, vec![
     ///         0.0, 0.0,
     ///         1.0, 0.0,
     ///         0.0, 1.0,
     ///         0.25, 0.25,
     ///     ]).unwrap();
-    /// 
+    ///
     /// assert_eq!(qh.num_faces(), 3);
     /// ```
     pub fn build_managed(
@@ -199,7 +199,7 @@ impl QhBuilder {
     /// # Example
     /// ```
     /// # use qhull::*;
-    /// let qh = QhBuilder::new()
+    /// let qh = QhBuilder::default()
     ///     .build_from_iter([
     ///         [0.0, 0.0],
     ///         [1.0, 0.0],
@@ -226,11 +226,18 @@ impl QhBuilder {
 
     /// Configure the qhull instance with a closure
     ///
+    /// # Safety
+    /// * closure must not panic
+    /// * closure shall not invalidate the qhull instance
+    /// * closure shall not keep references to the qhull instance
+    /// * closure shall not initialize the qhull instance
+    /// * closure shall not modify the error handling state of the qhull instance
+    ///
     /// # Example
     /// ```
     /// # use qhull::*;
     /// let builder = unsafe {
-    ///     QhBuilder::new()
+    ///     QhBuilder::default()
     ///         .with_configure(|qh| {
     ///             Qh::try_on_qh(qh, |qh| {
     ///                 qh.DELAUNAY = true as _;

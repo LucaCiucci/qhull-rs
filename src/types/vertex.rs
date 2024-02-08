@@ -1,4 +1,3 @@
-
 use std::{fmt::Debug, marker::PhantomData};
 
 use crate::{helpers::QhTypeRef, sys, Set};
@@ -12,7 +11,14 @@ impl<'a> Debug for Vertex<'a> {
             .field("id", &self.id())
             .field("visit_id", &self.visit_id())
             .field("point", &self.point())
-            .field("neighbors", &self.neighbors().iter().map(|n| n.iter().map(|v| v.id()).collect::<Vec<_>>()).collect::<Vec<_>>())
+            .field(
+                "neighbors",
+                &self
+                    .neighbors()
+                    .iter()
+                    .map(|n| n.iter().map(|v| v.id()).collect::<Vec<_>>())
+                    .collect::<Vec<_>>(),
+            )
             .finish()
     }
 }
@@ -51,11 +57,7 @@ impl<'a> Vertex<'a> {
 
     pub fn neighbors(&self) -> Option<Set<'a, Vertex<'a>>> {
         let vertex = unsafe { self.raw_ref() };
-        if vertex.neighbors.is_null() {
-            None
-        } else {
-            Some(Set::new(vertex.neighbors, self.dim()))
-        }
+        Set::maybe_new(vertex.neighbors, self.dim())
     }
 }
 

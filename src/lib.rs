@@ -2,16 +2,19 @@
 
 use std::marker::PhantomData;
 
-use io_buffers::IOBuffers;
 use helpers::{prepare_delaunay_points, CollectedCoords, QhTypeRef};
+use io_buffers::IOBuffers;
 pub use qhull_sys as sys;
 
+mod error;
 pub mod helpers;
-pub mod tmp_file;
 pub mod io_buffers;
-mod error; pub use error::*;
-mod builder; pub use builder::*;
-mod types; pub use types::*;
+pub mod tmp_file;
+pub use error::*;
+mod builder;
+pub use builder::*;
+mod types;
+pub use types::*;
 
 /// A Qhull instance
 pub struct Qh<'a> {
@@ -25,32 +28,23 @@ pub struct Qh<'a> {
 impl<'a> Qh<'a> {
     /// Create a new builder
     pub fn builder() -> QhBuilder {
-        QhBuilder::new()
+        QhBuilder::default()
     }
 
     /// Compute the convex hull
     pub fn compute(&mut self) -> Result<(), QhError> {
-        unsafe {
-            Qh::try_on_qh(self, |qh| sys::qh_qhull(qh))
-        }
+        unsafe { Qh::try_on_qh(self, |qh| sys::qh_qhull(qh)) }
     }
 
     /// Check the output of the qhull instance
     pub fn check_output(&mut self) -> Result<(), QhError> {
-        unsafe {
-            Qh::try_on_qh(
-                self,
-                |qh| sys::qh_check_output(qh),
-            )
-        }
+        unsafe { Qh::try_on_qh(self, |qh| sys::qh_check_output(qh)) }
     }
 
     /// Creates a new Delaunay triangulation
     ///
     /// See the `examples` directory for an example.
-    pub fn new_delaunay<I>(
-        points: impl IntoIterator<Item = I>,
-    ) -> Result<Self, QhError<'static>>
+    pub fn new_delaunay<I>(points: impl IntoIterator<Item = I>) -> Result<Self, QhError<'static>>
     where
         I: IntoIterator<Item = f64>,
     {
@@ -60,7 +54,7 @@ impl<'a> Qh<'a> {
             dim,
         } = prepare_delaunay_points(points);
 
-        let mut builder = QhBuilder::new();
+        let mut builder = QhBuilder::default();
         unsafe {
             builder = builder.with_configure(|qh| {
                 Self::try_on_qh(qh, |qh| {
@@ -100,21 +94,20 @@ impl<'a> Qh<'a> {
     }
 
     pub fn simplices(&self) -> impl Iterator<Item = Face> {
-        self
-            .faces()
-            .filter(|f| f.simplicial())
+        self.faces().filter(|f| f.simplicial())
     }
 
     pub fn num_faces(&self) -> usize {
-        unsafe {
-            sys::qh_get_num_facets(&self.qh) as _
-        }
+        unsafe { sys::qh_get_num_facets(&self.qh) as _ }
     }
 
     /// Try a function on the qhull instance
     ///
     /// This function provides a way to access and possibly modify the qhull instance.  
-    /// You should use only this function to access the qhull instance, as it provides a way to handle errors.  
+    /// You should use only this function to access the qhull instance, as it provides a way to handle errors.
+    ///
+    /// # Safety
+    /// This function is unsafe because it provides a way to access and possibly modify the qhull instance.
     ///
     /// # Example
     /// ```
@@ -153,13 +146,12 @@ impl<'a> Qh<'a> {
     ///     }).expect("qhull output check failed");
     /// }
     /// ```
+    ///
     pub unsafe fn try_on_qh<'b, R>(
         qh: &'b mut Qh,
         f: impl FnOnce(&mut sys::qhT) -> R,
     ) -> Result<R, QhError<'b>> {
-        unsafe {
-            QhError::try_on_raw(&mut qh.qh, &mut qh.buffers.err_file, f)
-        }
+        unsafe { QhError::try_on_raw(&mut qh.qh, &mut qh.buffers.err_file, f) }
     }
 }
 

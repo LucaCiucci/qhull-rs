@@ -50,7 +50,6 @@ impl<'a> Debug for Face<'a> {
 }
 
 impl<'a> Face<'a> {
-    /// 
     pub fn is_sentinel(&self) -> bool {
         self.id() == 0
     }
@@ -103,11 +102,10 @@ impl<'a> Face<'a> {
 
     pub fn ridges(&self) -> Option<Set<'a, Ridge<'a>>> {
         if self.dim() == 0 {
-            return None;
+            None
         } else {
             let face = unsafe { self.raw_ref() };
-            let has_ridges = !face.ridges.is_null();
-            has_ridges.then(|| Set::new(face.ridges, self.dim() - 1))
+            Set::maybe_new(face.ridges, self.dim() - 1)
         }
     }
 
@@ -284,9 +282,7 @@ impl<'a> QhTypeRef for Face<'a> {
 pub struct FaceIterator<'a>(Option<Face<'a>>);
 
 impl<'a> FaceIterator<'a> {
-    pub fn new(
-        face: Option<Face<'a>>,
-    ) -> Self {
+    pub fn new(face: Option<Face<'a>>) -> Self {
         Self(face)
     }
 }

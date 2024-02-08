@@ -44,7 +44,7 @@ macro_rules! define_error_kinds {
     };
 }
 
-define_error_kinds!{
+define_error_kinds! {
     // TODO ...
 }
 
@@ -59,7 +59,12 @@ pub struct QhError<'a> {
 
 impl<'a> Display for QhError<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Qhull error: {:?} (#{})", self.kind, self.kind.error_code())?;
+        write!(
+            f,
+            "Qhull error: {:?} (#{})",
+            self.kind,
+            self.kind.error_code()
+        )?;
         if let Some(msg) = &self.error_message {
             write!(f, "\n{}", msg)?;
         }
@@ -88,13 +93,22 @@ impl<'a> QhError<'a> {
             vertex,
         } = self;
         if let Some(face) = face {
-            eprintln!("During conversion to static, a face was discarded: {:?}", face);
+            eprintln!(
+                "During conversion to static, a face was discarded: {:?}",
+                face
+            );
         }
         if let Some(ridge) = ridge {
-            eprintln!("During conversion to static, a ridge was discarded: {:?}", ridge);
+            eprintln!(
+                "During conversion to static, a ridge was discarded: {:?}",
+                ridge
+            );
         }
         if let Some(vertex) = vertex {
-            eprintln!("During conversion to static, a vertex was discarded: {:?}", vertex);
+            eprintln!(
+                "During conversion to static, a vertex was discarded: {:?}",
+                vertex
+            );
         }
         QhError {
             kind,
@@ -106,6 +120,10 @@ impl<'a> QhError<'a> {
     }
 
     /// Try to run a function on a raw qhT instance and handle errors.
+    ///
+    /// # Safety
+    /// * shall not be nested
+    /// * shall not be called when errors are already being handled
     ///
     /// # Implementation details
     ///
@@ -126,21 +144,20 @@ impl<'a> QhError<'a> {
     where
         F: FnOnce(&mut sys::qhT) -> R,
     {
-        unsafe extern "C" fn cb<F2>(
-            qh: *mut sys::qhT,
-            data: *mut std::ffi::c_void,
-        )
+        unsafe extern "C" fn cb<F2>(qh: *mut sys::qhT, data: *mut std::ffi::c_void)
         where
             F2: FnOnce(&mut sys::qhT),
         {
-            assert!(qh.is_null() == false, "qh is null");
-            assert!(data.is_null() == false, "data is null");
+            assert!(!qh.is_null(), "qh is null");
+            assert!(!data.is_null(), "data is null");
             let qh = &mut *qh;
             let f: &mut Option<F2> = &mut *(data as *mut _);
             f.take().unwrap()(qh);
         }
-    
-        fn get_cb<F>(_: &mut Option<F>) -> unsafe extern "C" fn(*mut sys::qhT, *mut std::ffi::c_void)
+
+        fn get_cb<F>(
+            _: &mut Option<F>,
+        ) -> unsafe extern "C" fn(*mut sys::qhT, *mut std::ffi::c_void)
         where
             F: FnOnce(&mut sys::qhT),
         {
@@ -150,18 +167,21 @@ impl<'a> QhError<'a> {
         let mut result = None;
 
         let mut f = Some(|qh: &mut sys::qhT| result = Some(f(qh)));
-    
-        let err_code = unsafe { sys::qhull_sys__try_on_qh(
-            &mut *qh,
-            Some(get_cb(&mut f)),
-            &mut f as *mut _ as *mut std::ffi::c_void,
-        )};
+
+        let err_code = unsafe {
+            sys::qhull_sys__try_on_qh(
+                &mut *qh,
+                Some(get_cb(&mut f)),
+                &mut f as *mut _ as *mut std::ffi::c_void,
+            )
+        };
 
         if err_code == 0 {
             Ok(result.unwrap())
         } else {
             let kind = QhErrorKind::from_code(err_code);
-            let file = err_file.replace(TmpFile::new().expect("Failed to create a replacement temporary file"));
+            let file = err_file
+                .replace(TmpFile::new().expect("Failed to create a replacement temporary file"));
             qh.ferr = err_file.as_ref().unwrap().file_handle();
             let msg = file.map(|file| file.read_as_string_and_close().unwrap());
             Err(QhError {

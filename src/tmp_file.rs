@@ -1,8 +1,6 @@
-
 use std::io;
 
 use crate::sys;
-
 
 pub struct TmpFile {
     file: *mut sys::FILE,
@@ -19,7 +17,7 @@ impl TmpFile {
                     if !file.is_null() {
                         sys::fclose(file);
                     }
-                    return Err(io::Error::last_os_error());
+                    Err(io::Error::last_os_error())
                 } else {
                     Ok(TmpFile { file })
                 }
@@ -43,7 +41,7 @@ impl TmpFile {
     pub fn read_and_close(self) -> Result<Vec<u8>, std::io::Error> {
         // flush the file
         let _ = unsafe { sys::fflush(self.file) };
-        
+
         // TODO fix this: written by copilot but doesn't work, but should be more efficient
         /*
         // Seek to the beginning of the file
@@ -78,7 +76,7 @@ impl TmpFile {
 
     pub fn read_as_string_and_close(self) -> Result<String, std::io::Error> {
         let buffer = self.read_and_close()?;
-        Ok(String::from_utf8(buffer).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?)
+        String::from_utf8(buffer).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
     }
 }
 

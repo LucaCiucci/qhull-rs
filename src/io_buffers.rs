@@ -1,19 +1,17 @@
 use crate::{sys, tmp_file::TmpFile};
 
-
 pub struct IOBuffers {
     pub out_file: Option<TmpFile>,
     pub err_file: Option<TmpFile>,
 }
 
 impl IOBuffers {
-    pub fn new(
-        capture_stdout: bool,
-        capture_stderr: bool,
-    ) -> Self {
+    pub fn new(capture_stdout: bool, capture_stderr: bool) -> Self {
         Self {
-            out_file: capture_stdout.then(|| TmpFile::new().expect("failed to create temporary file for stdout")),
-            err_file: capture_stderr.then(|| TmpFile::new().expect("failed to create temporary file for stderr")),
+            out_file: capture_stdout
+                .then(|| TmpFile::new().expect("failed to create temporary file for stdout")),
+            err_file: capture_stderr
+                .then(|| TmpFile::new().expect("failed to create temporary file for stderr")),
         }
     }
 

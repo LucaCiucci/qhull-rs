@@ -1,6 +1,5 @@
 use std::{env, fs::read_dir, path::PathBuf};
 
-
 const QHULL_SRC_DIR: &str = "qhull/src/libqhull_r";
 
 fn main() {
@@ -55,7 +54,8 @@ fn main() {
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .clang_args([
             "-Iqhull/src/libqhull_r".to_string(),
-            "-target".to_string(), target_triple,
+            "-target".to_string(),
+            target_triple,
         ])
         .generate()
         .expect("Unable to generate bindings");

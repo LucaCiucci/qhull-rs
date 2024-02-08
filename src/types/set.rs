@@ -25,15 +25,6 @@ where
 }
 
 impl<'a, T: QhTypeRef> Set<'a, T> {
-    pub fn new(set: *mut sys::setT, dim: usize) -> Self {
-        assert_eq!(set.is_null(), false, "set is null");
-        Self {
-            set,
-            dim,
-            _phantom: PhantomData,
-        }
-    }
-
     pub fn maybe_new(set: *mut sys::setT, dim: usize) -> Option<Self> {
         if set.is_null() {
             None
@@ -51,7 +42,7 @@ impl<'a, T: QhTypeRef> Set<'a, T> {
     }
 }
 
-pub(crate) fn dbg_face_set<'a>(set: Option<Set<Face<'a>>>) -> Option<Vec<u32>> {
+pub(crate) fn dbg_face_set(set: Option<Set<Face>>) -> Option<Vec<u32>> {
     set.map(|s| s.iter().map(|f| f.id()).collect())
 }
 
@@ -65,7 +56,7 @@ pub struct SetIterator<'a, T: QhTypeRef> {
 impl<'a, T: QhTypeRef> SetIterator<'a, T> {
     pub fn new(set: &Set<'a, T>) -> Self {
         let dim = set.dim;
-        assert_eq!(set.set.is_null(), false);
+        assert!(!set.set.is_null());
         let set = unsafe { &*set.set };
         let ptr = unsafe { (&(set.e[0].p)) as *const *mut c_void as *mut *mut T::FFIType };
         Self {
