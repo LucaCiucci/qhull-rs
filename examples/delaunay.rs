@@ -10,7 +10,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     ])?;
 
     for simplex in qh.simplices() {
-        println!("{:?}", simplex.vertices().iter().map(|v| v.id()).collect::<Vec<_>>());
+        println!("{:?}", simplex.vertices().unwrap().iter().map(|v| v.id()).collect::<Vec<_>>());
     }
 
     let mut simplices = qh

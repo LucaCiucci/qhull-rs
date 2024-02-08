@@ -34,7 +34,7 @@ let qh = Qh::builder()
 
 for simplex in qh.simplices() {
     let vertices = simplex
-        .vertices()
+        .vertices().unwrap()
         .iter()
         .map(|v| v.id())
         .collect::<Vec<_>>();
