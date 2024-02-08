@@ -1,4 +1,4 @@
-use std::{env, fs::read_dir, path::{Path, PathBuf}};
+use std::{env, fs::read_dir, path::PathBuf};
 
 
 const QHULL_SRC_DIR: &str = "qhull/src/libqhull_r";

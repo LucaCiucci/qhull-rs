@@ -10,3 +10,7 @@ int qhull_sys__try_on_qh(
     void (*fn)(qhT* qh, void* data),
     void* data
 );
+
+FILE* qhull_sys__stdin();
+FILE* qhull_sys__stdout();
+FILE* qhull_sys__stderr();

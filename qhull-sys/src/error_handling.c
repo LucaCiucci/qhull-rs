@@ -44,3 +44,15 @@ int qhull_sys__try_on_qh(
 
     return try_status;
 }
+
+FILE* qhull_sys__stdin() {
+    return stdin;
+}
+
+FILE* qhull_sys__stdout() {
+    return stdout;
+}
+
+FILE* qhull_sys__stderr() {
+    return stderr;
+}
