@@ -15,7 +15,14 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let mut simplices = qh
         .simplices()
-        .map(|f| f.vertices().iter().map(|v| v.id() - 1).collect::<Vec<_>>())
+        .filter(|f| !f.is_sentinel())
+        .map(|f|
+            f
+                .vertices().unwrap()
+                .iter()
+                .map(|v| v.id() - 1)
+                .collect::<Vec<_>>()
+        )
         .collect::<Vec<_>>();
 
     simplices.iter_mut().for_each(|s| s.sort());

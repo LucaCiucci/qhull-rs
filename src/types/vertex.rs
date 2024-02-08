@@ -12,29 +12,24 @@ impl<'a> Debug for Vertex<'a> {
             .field("id", &self.id())
             .field("visit_id", &self.visit_id())
             .field("point", &self.point())
-            .field("neighbors_count", &self.neighbors().iter().count())
+            .field("neighbors", &self.neighbors().iter().map(|n| n.iter().map(|v| v.id()).collect::<Vec<_>>()).collect::<Vec<_>>())
             .finish()
     }
 }
 
 impl<'a> Vertex<'a> {
-    pub fn new(vertex: *mut sys::vertexT, dim: usize) -> Self {
-        assert_eq!(vertex.is_null(), false, "vertex is null");
-        Self(vertex, dim, PhantomData)
-    }
-
     pub fn dim(&self) -> usize {
         self.1
     }
 
-    pub fn next(&self) -> Vertex {
+    pub fn next(&self) -> Option<Vertex<'a>> {
         let vertex = unsafe { self.raw_ref() };
-        Self::new(vertex.next, self.dim())
+        Self::from_ptr(vertex.next, self.dim())
     }
 
-    pub fn previous(&self) -> Vertex {
+    pub fn previous(&self) -> Option<Vertex<'a>> {
         let vertex = unsafe { self.raw_ref() };
-        Self::new(vertex.previous, self.dim())
+        Self::from_ptr(vertex.previous, self.dim())
     }
 
     pub fn point(&self) -> &[f64] {
@@ -54,17 +49,25 @@ impl<'a> Vertex<'a> {
         vertex.visitid
     }
 
-    pub fn neighbors(&self) -> Set<Vertex> {
+    pub fn neighbors(&self) -> Option<Set<'a, Vertex<'a>>> {
         let vertex = unsafe { self.raw_ref() };
-        Set::new(vertex.neighbors, self.dim())
+        if vertex.neighbors.is_null() {
+            None
+        } else {
+            Some(Set::new(vertex.neighbors, self.dim()))
+        }
     }
 }
 
 impl<'a> QhTypeRef for Vertex<'a> {
     type FFIType = sys::vertexT;
 
-    fn from_ptr(ptr: *mut Self::FFIType, dim: usize) -> Self {
-        Self::new(ptr, dim)
+    fn from_ptr(ptr: *mut Self::FFIType, dim: usize) -> Option<Self> {
+        if ptr.is_null() {
+            None
+        } else {
+            Some(Self(ptr, dim, PhantomData))
+        }
     }
 
     unsafe fn raw_ptr(&self) -> *mut Self::FFIType {

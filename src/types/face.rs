@@ -1,20 +1,58 @@
 use std::{fmt::Debug, marker::PhantomData};
 
-use crate::{helpers::QhTypeRef, sys, Ridge, Set, Vertex};
+use crate::{dbg_face_set, helpers::QhTypeRef, sys, Ridge, Set, Vertex};
 
 #[derive(Clone, Copy)]
 pub struct Face<'a>(*mut sys::facetT, usize, PhantomData<&'a ()>);
 
 impl<'a> Debug for Face<'a> {
-    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Face")
+            .field("id", &self.id())
+            .field("visit_id", &self.visit_id())
+            .field("furthest_dist", &self.furthest_dist())
+            .field("max_outside", &self.max_outside())
+            .field("offset", &self.offset())
+            .field("normal", &self.normal())
+            .field("center", &self.center())
+            .field("previous", &self.previous().map(|f| f.id()))
+            .field("next", &self.next().map(|f| f.id()))
+            .field("vertices", &self.vertices())
+            .field("ridges", &self.ridges())
+            .field("neighbors", &dbg_face_set(self.neighbors()))
+            .field("outside_set", &self.outside_set())
+            .field("coplanar_set", &self.coplanar_set())
+            .field("tricoplanar", &self.tricoplanar())
+            .field("new_facet", &self.new_facet())
+            .field("visible", &self.visible())
+            .field("top_orient", &self.top_orient())
+            .field("simplicial", &self.simplicial())
+            .field("seen", &self.seen())
+            .field("seen2", &self.seen2())
+            .field("flipped", &self.flipped())
+            .field("upper_delaunay", &self.upper_delaunay())
+            .field("not_furthest", &self.not_furthest())
+            .field("good", &self.good())
+            .field("is_area", &self.is_area())
+            .field("dup_ridge", &self.dup_ridge())
+            .field("merge_ridge", &self.merge_ridge())
+            .field("merge_ridge2", &self.merge_ridge2())
+            .field("coplanar_horizon", &self.coplanar_horizon())
+            .field("merge_horizon", &self.merge_horizon())
+            .field("cycle_done", &self.cycle_done())
+            .field("tested", &self.tested())
+            .field("keep_centrum", &self.keep_centrum())
+            .field("new_merge", &self.new_merge())
+            .field("degenerate", &self.degenerate())
+            .field("redundant", &self.redundant())
+            .finish()
     }
 }
 
 impl<'a> Face<'a> {
-    pub fn new(facet: *mut sys::facetT, dim: usize) -> Self {
-        assert_eq!(facet.is_null(), false, "facet is null");
-        Self(facet, dim, PhantomData)
+    /// 
+    pub fn is_sentinel(&self) -> bool {
+        self.id() == 0
     }
 
     pub fn furthest_dist(&self) -> f64 {
@@ -48,22 +86,22 @@ impl<'a> Face<'a> {
         }
     }
 
-    pub fn previous(&self) -> Face {
+    pub fn previous(&self) -> Option<Face<'a>> {
         let face = unsafe { self.raw_ref() };
-        Self::new(face.previous, self.dim())
+        Self::from_ptr(face.previous, self.dim())
     }
 
-    pub fn next(&self) -> Face {
+    pub fn next(&self) -> Option<Face<'a>> {
         let face = unsafe { self.raw_ref() };
-        Self::new(face.next, self.dim())
+        Self::from_ptr(face.next, self.dim())
     }
 
-    pub fn vertices(&self) -> Set<Vertex> {
+    pub fn vertices(&self) -> Option<Set<'a, Vertex<'a>>> {
         let face = unsafe { self.raw_ref() };
-        Set::new(face.vertices, self.dim())
+        Set::maybe_new(face.vertices, self.dim())
     }
 
-    pub fn ridges(&self) -> Option<Set<Ridge>> {
+    pub fn ridges(&self) -> Option<Set<'a, Ridge<'a>>> {
         if self.dim() == 0 {
             return None;
         } else {
@@ -73,19 +111,19 @@ impl<'a> Face<'a> {
         }
     }
 
-    pub fn neighbors(&self) -> Set<Face> {
+    pub fn neighbors(&self) -> Option<Set<'a, Face<'a>>> {
         let face = unsafe { self.raw_ref() };
-        Set::new(face.neighbors, self.dim())
+        Set::maybe_new(face.neighbors, self.dim())
     }
 
-    pub fn outside_set(&self) -> Set<Vertex> {
+    pub fn outside_set(&self) -> Option<Set<'a, Vertex<'a>>> {
         let face = unsafe { self.raw_ref() };
-        Set::new(face.outsideset, self.dim())
+        Set::maybe_new(face.outsideset, self.dim())
     }
 
-    pub fn coplanar_set(&self) -> Set<Vertex> {
+    pub fn coplanar_set(&self) -> Option<Set<'a, Vertex<'a>>> {
         let face = unsafe { self.raw_ref() };
-        Set::new(face.coplanarset, self.dim())
+        Set::maybe_new(face.coplanarset, self.dim())
     }
 
     pub fn visit_id(&self) -> u32 {
@@ -226,8 +264,12 @@ impl<'a> Face<'a> {
 impl<'a> QhTypeRef for Face<'a> {
     type FFIType = sys::facetT;
 
-    fn from_ptr(ptr: *mut Self::FFIType, dim: usize) -> Self {
-        Self::new(ptr, dim)
+    fn from_ptr(ptr: *mut Self::FFIType, dim: usize) -> Option<Self> {
+        if ptr.is_null() {
+            None
+        } else {
+            Some(Self(ptr, dim, PhantomData))
+        }
     }
 
     unsafe fn raw_ptr(&self) -> *mut Self::FFIType {
@@ -239,19 +281,13 @@ impl<'a> QhTypeRef for Face<'a> {
     }
 }
 
-pub struct FaceIterator<'a>(*mut sys::facetT, usize, PhantomData<&'a ()>);
+pub struct FaceIterator<'a>(Option<Face<'a>>);
 
 impl<'a> FaceIterator<'a> {
     pub fn new(
-        facet: *mut sys::facetT,
-        dim: usize,
+        face: Option<Face<'a>>,
     ) -> Self {
-        assert_eq!(facet.is_null(), false, "facet is null");
-        Self(facet, dim, PhantomData)
-    }
-
-    pub fn ptr(&self) -> *mut sys::facetT {
-        self.0
+        Self(face)
     }
 }
 
@@ -259,25 +295,20 @@ impl<'a> Iterator for FaceIterator<'a> {
     type Item = Face<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let facet = self.0;
-        //println!("facet: {:?}", facet);
-        if facet.is_null() {
-            None
-        } else {
-            self.0 = unsafe { (*facet).next };
-            Some(Face::new(facet, self.1))
+        let element = self.0;
+        if let Some(element) = element {
+            self.0 = element.next();
         }
+        element
     }
 }
 
 impl<'a> DoubleEndedIterator for FaceIterator<'a> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        let facet = self.0;
-        if facet.is_null() {
-            None
-        } else {
-            self.0 = unsafe { (*facet).previous };
-            Some(Face::new(facet, self.1))
+        let element = self.0;
+        if let Some(element) = element {
+            self.0 = element.previous();
         }
+        element
     }
 }

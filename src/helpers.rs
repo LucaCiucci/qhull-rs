@@ -1,9 +1,9 @@
 
 /// A trait for types that can be created from a pointer to a C type and a dimension.
-pub trait QhTypeRef {
+pub trait QhTypeRef: Sized {
     type FFIType;
 
-    fn from_ptr(ptr: *mut Self::FFIType, dim: usize) -> Self;
+    fn from_ptr(ptr: *mut Self::FFIType, dim: usize) -> Option<Self>;
 
     unsafe fn raw_ptr(&self) -> *mut Self::FFIType;
 

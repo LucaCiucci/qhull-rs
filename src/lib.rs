@@ -3,7 +3,7 @@
 use std::marker::PhantomData;
 
 use io_buffers::IOBuffers;
-use helpers::{prepare_delaunay_points, CollectedCoords};
+use helpers::{prepare_delaunay_points, CollectedCoords, QhTypeRef};
 pub use qhull_sys as sys;
 
 pub mod helpers;
@@ -77,17 +77,31 @@ impl<'a> Qh<'a> {
         builder.build_managed(dim, coords)
     }
 
-    pub fn faces(&self) -> FaceIterator {
+    /// Get all the faces in the hull
+    ///
+    /// # Remarks
+    /// * this function will also return the sentinel face, which is the last face in the list of faces.
+    /// To avoid it, use the [`Qh::faces`] function or just [`filter`](std::iter::Iterator::filter) the iterator
+    /// checking for [`Face::is_sentinel`].
+    pub fn all_faces(&self) -> FaceIterator {
         unsafe {
             let list = sys::qh_get_facet_list(&self.qh);
-            FaceIterator::new(list, self.dim)
+            FaceIterator::new(Face::from_ptr(list, self.dim))
         }
+    }
+
+    /// Get the faces in the hull
+    ///
+    /// # Remarks
+    /// * this function will not return the sentinel face, which is the last face in the list of faces.
+    /// To get it, use the [`Qh::all_faces`] function.
+    pub fn faces(&self) -> impl Iterator<Item = Face> {
+        self.all_faces().filter(|f| !f.is_sentinel())
     }
 
     pub fn simplices(&self) -> impl Iterator<Item = Face> {
         self
             .faces()
-            .take(self.num_faces()) // TODO last is empty ???
             .filter(|f| f.simplicial())
     }
 

@@ -4,7 +4,7 @@ use std::marker::PhantomData;
 
 use crate::helpers::QhTypeRef;
 
-use crate::sys;
+use crate::{sys, Face};
 
 #[derive(Clone, Copy)]
 pub struct Set<'a, T: QhTypeRef> {
@@ -13,9 +13,14 @@ pub struct Set<'a, T: QhTypeRef> {
     _phantom: PhantomData<&'a T>,
 }
 
-impl<'a, T: QhTypeRef> Debug for Set<'a, T> {
-    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
+impl<'a, T: QhTypeRef> Debug for Set<'a, T>
+where
+    T: Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct(&format!("Set<{}>", std::any::type_name::<T>()))
+            .field("elements:", &self.iter().collect::<Vec<_>>())
+            .finish()
     }
 }
 
@@ -29,9 +34,25 @@ impl<'a, T: QhTypeRef> Set<'a, T> {
         }
     }
 
+    pub fn maybe_new(set: *mut sys::setT, dim: usize) -> Option<Self> {
+        if set.is_null() {
+            None
+        } else {
+            Some(Self {
+                set,
+                dim,
+                _phantom: PhantomData,
+            })
+        }
+    }
+
     pub fn iter(&self) -> SetIterator<'a, T> {
         SetIterator::new(self)
     }
+}
+
+pub(crate) fn dbg_face_set<'a>(set: Option<Set<Face<'a>>>) -> Option<Vec<u32>> {
+    set.map(|s| s.iter().map(|f| f.id()).collect())
 }
 
 #[derive(Clone, Copy)]
@@ -60,10 +81,10 @@ impl<'a, T: QhTypeRef> Iterator for SetIterator<'a, T> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let value_ptr = unsafe { *self.ptr };
-        if value_ptr.is_null() {
-            return None;
+        let element = T::from_ptr(value_ptr, self.dim);
+        if element.is_some() {
+            self.ptr = unsafe { self.ptr.add(1) };
         }
-        self.ptr = unsafe { self.ptr.add(1) };
-        Some(T::from_ptr(value_ptr, self.dim))
+        element
     }
 }

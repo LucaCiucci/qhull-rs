@@ -167,9 +167,9 @@ impl<'a> QhError<'a> {
             Err(QhError {
                 kind,
                 error_message: msg,
-                face: if qh.tracefacet.is_null() { None } else { Some(Face::from_ptr(qh.tracefacet, qh.input_dim as _)) }, // TODO is this dim correct?
-                ridge: if qh.traceridge.is_null() { None } else { Some(Ridge::from_ptr(qh.traceridge, qh.input_dim as _)) }, // TODO is this dim correct?
-                vertex: if qh.tracevertex.is_null() { None } else { Some(Vertex::from_ptr(qh.tracevertex, qh.input_dim as _)) } // TODO is this dim correct?
+                face: Face::from_ptr(qh.tracefacet, qh.input_dim as _), // TODO is this dim correct?
+                ridge: Ridge::from_ptr(qh.traceridge, qh.input_dim as _), // TODO is this dim correct?
+                vertex: Vertex::from_ptr(qh.tracevertex, qh.input_dim as _), // TODO is this dim correct?
             })
         }
     }

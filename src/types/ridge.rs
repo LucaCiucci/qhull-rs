@@ -10,25 +10,37 @@ pub struct Ridge<'a> {
 }
 
 impl<'a> Debug for Ridge<'a> {
-    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Ridge")
+            .field("id", &self.id())
+            .field("seen", &self.seen())
+            .field("tested", &self.tested())
+            .field("non_convex", &self.non_convex())
+            .field("merge_vertex", &self.merge_vertex())
+            .field("merge_vertex_2", &self.merge_vertex_2())
+            .field("simplicial_top", &self.simplicial_top())
+            .field("simplicial_bottom", &self.simplicial_bottom())
+            .field("vertices", &self.vertices())
+            .field("top", &self.top().id())
+            .field("bottom", &self.bottom().id())
+            .finish()
     }
 }
 
 impl<'a> Ridge<'a> {
-    pub fn vertices(&self) -> Set<'a, Vertex<'a>> {
+    pub fn vertices(&self) -> Option<Set<'a, Vertex<'a>>> {
         let ridge = unsafe { self.raw_ref() };
-        Set::new(ridge.vertices, self.dim)
+        Set::maybe_new(ridge.vertices, self.dim)
     }
 
     pub fn top(&self) -> Face<'a> {
         let ridge = unsafe { self.raw_ref() };
-        Face::new(ridge.top, self.dim)
+        Face::from_ptr(ridge.top, self.dim).unwrap()
     }
 
     pub fn bottom(&self) -> Face<'a> {
         let ridge = unsafe { self.raw_ref() };
-        Face::new(ridge.bottom, self.dim)
+        Face::from_ptr(ridge.bottom, self.dim).unwrap()
     }
 
     pub fn id(&self) -> u32 {
@@ -75,11 +87,15 @@ impl<'a> Ridge<'a> {
 impl<'a> QhTypeRef for Ridge<'a> {
     type FFIType = sys::ridgeT;
 
-    fn from_ptr(ptr: *mut Self::FFIType, dim: usize) -> Self {
-        Self {
-            ridge: ptr,
-            dim,
-            _phantom: PhantomData,
+    fn from_ptr(ptr: *mut Self::FFIType, dim: usize) -> Option<Self> {
+        if ptr.is_null() {
+            None
+        } else {
+            Some(Self {
+                ridge: ptr,
+                dim,
+                _phantom: PhantomData,
+            })
         }
     }
 

@@ -17,6 +17,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         let vertices = simplex
             .vertices()
             .iter()
+            .map(|v| v.iter())
+            .flatten()
             .map(|v| v.id())
             .collect::<Vec<_>>();
     
