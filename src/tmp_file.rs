@@ -11,14 +11,11 @@ pub struct TmpFile {
 impl TmpFile {
     pub fn new() -> io::Result<TmpFile> {
         unsafe {
-            let mut file: *mut sys::FILE = std::mem::zeroed();
-
             // on windows
             #[cfg(windows)]
             {
-                let err = sys::tmpfile_s(&mut file);
-
-                if err != 0 {
+                let mut file: *mut sys::FILE = std::mem::zeroed();
+                if sys::tmpfile_s(&mut file) != 0 {
                     if !file.is_null() {
                         sys::fclose(file);
                     }
