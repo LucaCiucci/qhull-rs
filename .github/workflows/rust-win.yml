@@ -1,4 +1,4 @@
-name: Rust
+name: Rust (Windows)
 
 on:
   push:
@@ -28,7 +28,3 @@ jobs:
       run: cargo test --verbose --all
     - name: Run tests (release)
       run: cargo test --verbose --all --release
-    - name: fmt
-      run: cargo fmt --check --all
-    - name: clippy
-      run: cargo clippy
