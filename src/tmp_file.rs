@@ -13,15 +13,28 @@ impl TmpFile {
         unsafe {
             let mut file: *mut sys::FILE = std::mem::zeroed();
 
-            let err = sys::tmpfile_s(&mut file);
+            // on windows
+            #[cfg(windows)]
+            {
+                let err = sys::tmpfile_s(&mut file);
 
-            if err != 0 {
-                if !file.is_null() {
-                    sys::fclose(file);
+                if err != 0 {
+                    if !file.is_null() {
+                        sys::fclose(file);
+                    }
+                    return Err(io::Error::last_os_error());
+                } else {
+                    Ok(TmpFile { file })
                 }
-                return Err(io::Error::last_os_error());
-            } else {
-                Ok(TmpFile { file })
+            }
+            #[cfg(not(windows))]
+            {
+                file = sys::tmpfile();
+                if file.is_null() {
+                    Err(io::Error::last_os_error())
+                } else {
+                    Ok(TmpFile { file })
+                }
             }
         }
     }
