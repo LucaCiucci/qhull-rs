@@ -3,14 +3,14 @@
 
 // The C++ code we want to reproduce:
 // #define QH_TRY_NO_THROW_(qh) \
-//     int QH_TRY_status; \
-//     if(qh->NOerrexit){ \
-//         qh->NOerrexit= False; \
-//         QH_TRY_status= setjmp(qh->errexit); \
-//     }else{ \
-//         QH_TRY_status= QH_TRY_ERROR; \
-//     } \
-//     if(!QH_TRY_status)
+     int QH_TRY_status; \
+     if(qh->NOerrexit){ \
+         qh->NOerrexit= False; \
+         QH_TRY_status= setjmp(qh->errexit); \
+     }else{ \
+         QH_TRY_status= QH_TRY_ERROR; \
+     } \
+     if(!QH_TRY_status)
 
 int qhull_sys__try_on_qh(
     qhT* qh,

@@ -5,6 +5,7 @@
         "coplanarset",
         "cycledone",
         "dupridge",
+        "errexit",
         "errfile",
         "fclose",
         "ferr",
