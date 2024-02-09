@@ -6,3 +6,5 @@
 #![allow(clippy::all)]
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+
+pub const QHULL_LICENSE_TEXT: &str = include_str!("../qhull/COPYING.txt");

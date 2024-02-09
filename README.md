@@ -19,6 +19,22 @@ Safe Rust [Qhull](http://www.qhull.org/) bindings
 cargo run --example hull
 ```
 
+### Binaries
+
+`qhull-rs` provides some binary targets from the original Qhull source code:
+- `qconvex`
+- `qdelaunay`
+- `qhalf`
+- `qhull`
+- `qvoronoi`
+- `rbox`
+
+To get them:
+```sh
+cargo install qhull
+qhull
+```
+
 ## Usage
 
 Add this to your `Cargo.toml`:

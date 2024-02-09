@@ -166,6 +166,10 @@ macro_rules! __impl_qhull_program {
             std::process::exit(unsafe {
                 let args = qhull::helpers::CArgs::from_env();
                 let (argc, argv) = args.argc_argv();
+                if argc <= 1 {
+                    println!("This binary, provided by the qhull crate, uses the Qhull library:");
+                    println!("{}\n", qhull::sys::QHULL_LICENSE_TEXT);
+                }
 
                 qhull::sys::$main(argc, argv)
             });
