@@ -1,7 +1,17 @@
 # qhull-rs
- Rust [Qhull](http://www.qhull.org/) bindings
+ Safe Rust [Qhull](http://www.qhull.org/) bindings
 
-This is a safe wrapper around the `qhull-sys` crate, it is not feature complete yet, you might prefer to use the raw `qhull-sys` crate if you need more control.
+> [Qhull](http://www.qhull.org/) computes the **convex hull**, **Delaunay** triangulation, **Voronoi** diagram, **halfspace intersection** about a point, **furthest-site Delaunay** triangulation, and furthest-site Voronoi diagram. The source code runs in **2-d**, **3-d**, **4-d**, and **higher dimensions**. Qhull implements the **Quickhull algorithm** for computing the convex hull. It handles roundoff errors from floating point arithmetic. It computes volumes, surface areas, and approximations to the convex hull.
+> 
+> Qhull does not support triangulation of non-convex surfaces, mesh generation of non-convex objects, medium-sized inputs in 9-D and higher, alpha shapes, weighted Voronoi diagrams, Voronoi volumes, or constrained Delaunay triangulations.
+>
+> &nbsp;&nbsp;&nbsp;&nbsp;\- [_Qhull main page_](http://www.qhull.org/) (retrieved<!--accessed?--> 2024-09-02)
+
+## Quick start
+
+```sh
+cargo run --example hull
+```
 
 ## Usage
 
@@ -17,9 +27,9 @@ For the current development version:
 qhull = { git = "https://github.com/LucaCiucci/qhull-rs" }
 ```
 
-### Examples
+### Example
 
-This creates a convex hull of a set of points in 2D:
+A 2D convex hull:
 ```rust
 use qhull::Qh;
 
@@ -43,13 +53,7 @@ for simplex in qh.simplices() {
 }
 ```
 
-To create a delaunay triangulation, you should use the [`Qh::new_delaunay`] method.
-
-See the `examples` directory for more examples, you can run them with `cargo run --example <example_name>`, for example:
-
-```sh
-cargo run --example delaunay
-```
+See the [`examples`] module/folder for more examples.
 
 ## License
 
