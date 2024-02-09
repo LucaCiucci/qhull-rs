@@ -33,4 +33,4 @@ include = [
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-qhull-sys = { version = "0.2", path = "qhull-sys" }
+qhull-sys = { version = "0.2", path = "qhull-sys", features = [ "include-programs" ]}

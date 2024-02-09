@@ -1,3 +1,5 @@
+use std::{ffi::CString, os::raw::{c_char, c_int}};
+
 /// A trait for types that can be created from a pointer to a C type and a dimension.
 pub trait QhTypeRef: Sized {
     type FFIType;
@@ -135,4 +137,38 @@ where
     }
 
     CollectedCoords { coords, count, dim }
+}
+
+pub struct CArgs {
+    args: Vec<CString>,
+    args_ptr: Vec<*const c_char>,
+}
+
+impl CArgs {
+    pub fn from_env() -> Self {
+        let args: Vec<CString> = std::env::args().map(|arg| CString::new(arg).unwrap()).collect();
+        let args_ptr: Vec<*const c_char> = args.iter().map(|arg| arg.as_ptr()).collect();
+        Self {
+            args,
+            args_ptr,
+        }
+    }
+
+    pub fn argc_argv(&self) -> (c_int, *mut *mut c_char) {
+        (self.args.len() as c_int, self.args_ptr.as_ptr() as *mut *mut c_char)
+    }
+}
+
+#[macro_export]
+macro_rules! __impl_qhull_program {
+    ($main:ident) => {
+        fn main() {
+            std::process::exit(unsafe {
+                let args = qhull::helpers::CArgs::from_env();
+                let (argc, argv) = args.argc_argv();
+
+                qhull::sys::$main(argc, argv)
+            });
+        }
+    };
 }

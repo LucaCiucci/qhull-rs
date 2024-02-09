@@ -13,6 +13,12 @@ exclude = [
 include = [
     "/qhull/src/libqhull_r/*",
     "/qhull/COPYING.txt",
+    "qhull/src/qconvex/qconvex_r.c",
+    "qhull/src/qdelaunay/qdelaun_r.c",
+    "qhull/src/qhalf/qhalf_r.c",
+    "qhull/src/qhull/unix_r.c",
+    "qhull/src/qvoronoi/qvoronoi_r.c",
+    "qhull/src/rbox/rbox_r.c",
     "/src/",
     "/Cargo.toml",
     "/README.md",
@@ -32,3 +38,4 @@ cc = "1.0"
 [features]
 default = []
 all-headers = []
+include-programs = []
