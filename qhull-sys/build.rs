@@ -78,7 +78,11 @@ fn main() {
             let main_function_name = format!("qhull_sys__{}_main", program);
             let program_source = std::fs::read_to_string(&program_path)
                 .unwrap()
-                .replace("int main(", &format!("int {}(", main_function_name));
+                .replace("int main(", &format!("int {}(", main_function_name))
+                .replace("char hidden_options", "static char hidden_options")
+                .replace("char qh_prompt", "static char qh_prompt")
+                .replace("char prompt", "static char prompt")
+                ;
             // write the modified source to a file in the OUT_DIR
             let program_source_path = out_path.join(format!("{}.c", program));
             let current_content = std::fs::read_to_string(&program_source_path).unwrap_or_default();
