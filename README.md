@@ -1,5 +1,11 @@
 # qhull-rs
- Safe Rust [Qhull](http://www.qhull.org/) bindings
+Safe Rust [Qhull](http://www.qhull.org/) bindings
+
+[![docs.rs](https://img.shields.io/docsrs/qhull)](https://docs.rs/qhull)
+[![Crates.io Version](https://img.shields.io/crates/v/qhull)](https://crates.io/crates/qhull)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/LucaCiucci/qhull-rs/rust.yml)](https://github.com/LucaCiucci/qhull-rs/actions)
+
+
 
 > [Qhull](http://www.qhull.org/) computes the **convex hull**, **Delaunay** triangulation, **Voronoi** diagram, **halfspace intersection** about a point, **furthest-site Delaunay** triangulation, and furthest-site Voronoi diagram. The source code runs in **2-d**, **3-d**, **4-d**, and **higher dimensions**. Qhull implements the **Quickhull algorithm** for computing the convex hull. It handles roundoff errors from floating point arithmetic. It computes volumes, surface areas, and approximations to the convex hull.
 > 
