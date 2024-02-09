@@ -1,9 +1,9 @@
 # qhull-rs
 Safe Rust [Qhull](http://www.qhull.org/) bindings
 
-[![docs.rs](https://img.shields.io/docsrs/qhull)](https://docs.rs/qhull)
 [![Crates.io Version](https://img.shields.io/crates/v/qhull)](https://crates.io/crates/qhull)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/LucaCiucci/qhull-rs/rust.yml)](https://github.com/LucaCiucci/qhull-rs/actions)
+[![docs.rs](https://img.shields.io/docsrs/qhull)](https://docs.rs/qhull)
 
 
 

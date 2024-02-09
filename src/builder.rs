@@ -69,11 +69,17 @@ impl QhBuilder {
         self
     }
 
+    /// Capture stdout
+    ///
+    /// When enabled, the output of the qhull library will be captured instead of printed to the console.
     pub fn capture_stdout(mut self, capture: bool) -> Self {
         self.capture_stdout = capture;
         self
     }
 
+    /// Capture stderr
+    ///
+    /// When enabled, the error output of the qhull library will be captured instead of printed to the console.
     pub fn capture_stderr(mut self, capture: bool) -> Self {
         self.capture_stderr = capture;
         self
@@ -308,6 +314,8 @@ impl QhBuilder {
         self.configs.push(Box::new(configurator));
         self
     }
+
+    // TODO args and checkflags
 }
 
 // https://doc.rust-lang.org/book/ch03-02-data-types.html

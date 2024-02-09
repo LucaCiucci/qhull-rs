@@ -84,6 +84,36 @@ impl<'a> Display for QhError<'a> {
 impl<'a> Error for QhError<'a> {}
 
 impl<'a> QhError<'a> {
+    /// Convert the error to a `'static` error.
+    ///
+    /// This is useful when you want to return the error from a function that is not tied to a [`Qh`](crate::Qh) reference.
+    ///
+    /// # Example
+    /// ```
+    /// # use qhull::*;
+    /// fn my_function() -> QhError<'static> {
+    ///     // We create a Qh with 10 aligned points,
+    ///     // Qhull will fail to compute the convex hull of these points.
+    ///     let mut qh = Qh::builder()
+    ///         .compute(false)
+    ///         .build_from_iter((0..10).map(|i| [0.0, i as f64]))
+    ///         .unwrap();
+    ///
+    ///     // we cannot return this error since it may contain some references 
+    ///     // to the Qh instance that will be dropped at the end of the function
+    ///     // (for example to problematic vertices)...
+    ///     let error = qh.compute().unwrap_err();
+    /// 
+    ///     // ... so we convert it to a static error,
+    ///     // but we will lose the references to the problematic vertices.
+    ///     error.into_static()
+    /// }
+    ///
+    /// let error = my_function();
+    /// assert!(error.face.is_none());
+    /// assert!(error.ridge.is_none());
+    /// assert!(error.vertex.is_none());
+    /// ```
     pub fn into_static(self) -> QhError<'static> {
         let QhError {
             kind,
