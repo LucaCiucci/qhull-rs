@@ -70,21 +70,13 @@ impl<'a> Qh<'a> {
             dim,
         } = prepare_delaunay_points(points);
 
-        let mut builder = QhBuilder::default();
-        unsafe {
-            builder = builder.with_configure(|qh| {
-                Self::try_on_qh(qh, |qh| {
-                    // TODO implement all the required options and test
-                    qh.DELAUNAY = true as _;
-                    qh.DELAUNAY = true as _;
-                    qh.SCALElast = true as _;
-                    qh.TRIangulate = true as _;
-                    qh.KEEPcoplanar = true as _;
-                })
-            })
-        };
-
-        builder.build_managed(dim, coords)
+        // TODO check correctness, use qdelaunay as reference
+        QhBuilder::default()
+            .delaunay(true)
+            .scale_last(true)
+            .triangulate(true)
+            .keep_coplanar(true)
+            .build_managed(dim, coords)
     }
 
     /// Get all the faces in the hull

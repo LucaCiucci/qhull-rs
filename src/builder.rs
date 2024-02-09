@@ -49,8 +49,8 @@ impl Default for QhBuilder {
             capture_stdout: false,
             capture_stderr: true,
             compute: true,
-            check_output: true,
-            check_points: true,
+            check_output: false,
+            check_points: false,
             configs: Vec::new(),
         }
     }
