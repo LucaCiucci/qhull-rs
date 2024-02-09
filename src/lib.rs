@@ -49,9 +49,11 @@ impl<'a> Qh<'a> {
     }
 
     pub fn check_points(&mut self) -> Result<(), QhError> {
-        unsafe { Qh::try_on_qh(self, |qh| {
-            println!("qh_check_points!!!");
-            sys::qh_check_points(qh) })
+        unsafe {
+            Qh::try_on_qh(self, |qh| {
+                println!("qh_check_points!!!");
+                sys::qh_check_points(qh)
+            })
         }
     }
 
