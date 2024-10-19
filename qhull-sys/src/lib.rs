@@ -5,13 +5,17 @@
 #![allow(non_snake_case)]
 #![allow(clippy::all)]
 
-use core::{ffi::{CStr, FromBytesUntilNulError}, fmt::Debug, str};
+use core::{
+    ffi::{CStr, FromBytesUntilNulError},
+    fmt::Debug,
+    str,
+};
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 pub const QHULL_LICENSE_TEXT: &str = include_str!("../qhull/COPYING.txt");
 
-fn str_from_i32_array<'a>(data: &'a[i8]) -> Result<&'a CStr, FromBytesUntilNulError> {
+fn str_from_i32_array<'a>(data: &'a [i8]) -> Result<&'a CStr, FromBytesUntilNulError> {
     unsafe {
         CStr::from_bytes_until_nul(core::slice::from_raw_parts(
             data.as_ptr() as *const u8,

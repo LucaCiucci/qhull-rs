@@ -99,11 +99,11 @@ impl<'a> QhError<'a> {
     ///         .build_from_iter((0..10).map(|i| [0.0, i as f64]))
     ///         .unwrap();
     ///
-    ///     // we cannot return this error since it may contain some references 
+    ///     // we cannot return this error since it may contain some references
     ///     // to the Qh instance that will be dropped at the end of the function
     ///     // (for example to problematic vertices)...
     ///     let error = qh.compute().unwrap_err();
-    /// 
+    ///
     ///     // ... so we convert it to a static error,
     ///     // but we will lose the references to the problematic vertices.
     ///     error.into_static()
