@@ -10,14 +10,14 @@ pub trait QhTypeRef: Sized {
     ///
     /// # Safety
     /// * Users must not invalidate the instance or
-    /// make it inconsistent with the current flow of the program.
+    ///   make it inconsistent with the current flow of the program.
     unsafe fn raw_ptr(&self) -> *mut Self::FFIType;
 
     /// Returns a reference to the C type.
     ///
     /// # Safety
     /// * Users must not invalidate the instance or
-    /// make it inconsistent with the current flow of the program.
+    ///   make it inconsistent with the current flow of the program.
     unsafe fn raw_ref(&self) -> &Self::FFIType {
         unsafe { &*self.raw_ptr() }
     }
@@ -106,8 +106,8 @@ where
     let orig_dim = dim - 1;
 
     let mut center: Vec<f64> = vec![0.0; orig_dim];
-    let mut min_coords: Vec<f64> = vec![std::f64::MAX; orig_dim];
-    let mut max_coords: Vec<f64> = vec![std::f64::MIN; orig_dim];
+    let mut min_coords: Vec<f64> = vec![f64::MAX; orig_dim];
+    let mut max_coords: Vec<f64> = vec![f64::MIN; orig_dim];
 
     for point in coords.windows(orig_dim + 1).step_by(orig_dim + 1) {
         for (i, coord) in point.iter().take(orig_dim).enumerate() {
