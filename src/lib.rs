@@ -73,6 +73,7 @@ impl<'a> Qh<'a> {
         // TODO check correctness, use qdelaunay as reference
         QhBuilder::default()
             .delaunay(true)
+            .upper_delaunay(true)
             .scale_last(true)
             .triangulate(true)
             .keep_coplanar(true)
