@@ -38,7 +38,7 @@ impl<'a> Vertex<'a> {
         Self::from_ptr(vertex.previous, self.dim())
     }
 
-    pub fn point(&self) -> Option<&[f64]> {
+    pub fn point(&self) -> Option<&'a [f64]> {
         unsafe {
             let vertex = self.raw_ref();
             vertex

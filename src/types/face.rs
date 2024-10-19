@@ -69,7 +69,7 @@ impl<'a> Face<'a> {
         face.offset
     }
 
-    pub fn normal(&self) -> Option<&[f64]> {
+    pub fn normal(&self) -> Option<&'a [f64]> {
         unsafe {
             let face = self.raw_ref();
             face.normal
@@ -81,7 +81,7 @@ impl<'a> Face<'a> {
 
     // TODO that union??
 
-    pub fn center(&self) -> Option<&[f64]> {
+    pub fn center(&self) -> Option<&'a [f64]> {
         unsafe {
             let face = self.raw_ref();
             face.center
