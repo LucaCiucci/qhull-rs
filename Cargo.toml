@@ -34,3 +34,7 @@ include = [
 
 [dependencies]
 qhull-sys = { version = "0.3", path = "qhull-sys", features = [ "include-programs" ]}
+
+[dev-dependencies]
+rand = "0.8.5"
+svg = "0.18.0"
