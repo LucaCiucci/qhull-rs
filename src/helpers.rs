@@ -109,7 +109,7 @@ where
     let mut min_coords: Vec<f64> = vec![std::f64::MAX; orig_dim];
     let mut max_coords: Vec<f64> = vec![std::f64::MIN; orig_dim];
 
-    for point in coords.windows(orig_dim + 1) {
+    for point in coords.windows(orig_dim + 1).step_by(orig_dim + 1) {
         for (i, coord) in point.iter().take(orig_dim).enumerate() {
             center[i] += coord;
             if *coord < min_coords[i] {
