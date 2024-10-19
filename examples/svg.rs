@@ -18,8 +18,8 @@ fn main() {
     eprintln!("Triangulation has {} triangles", triangles);
 
     let mut doc = svg::Document::new()
-        .set("width", "100%")
-        .set("height", "100%")
+        .set("width", "400")
+        .set("height", "400")
         .set("viewBox", (0, 0, 100, 100));
 
     doc = doc.add(Rectangle::new()
