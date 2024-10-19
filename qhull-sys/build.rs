@@ -81,8 +81,7 @@ fn main() {
                 .replace("int main(", &format!("int {}(", main_function_name))
                 .replace("char hidden_options", "static char hidden_options")
                 .replace("char qh_prompt", "static char qh_prompt")
-                .replace("char prompt", "static char prompt")
-                ;
+                .replace("char prompt", "static char prompt");
             // write the modified source to a file in the OUT_DIR
             let program_source_path = out_path.join(format!("{}.c", program));
             let current_content = std::fs::read_to_string(&program_source_path).unwrap_or_default();
@@ -94,7 +93,10 @@ fn main() {
             // add the file to the build
             builder.file(program_source_path.to_str().unwrap());
             // add the main function to the wrapper
-            header.push_str(&format!("int {}(int argc, char* argv[]);\n", main_function_name));
+            header.push_str(&format!(
+                "int {}(int argc, char* argv[]);\n",
+                main_function_name
+            ));
         }
 
         // write the header to a file in the OUT_DIR
@@ -104,7 +106,6 @@ fn main() {
         }
         bindings_builder = bindings_builder.header(header_path.to_str().unwrap());
     }
-
 
     builder.compile("qhull_r");
 

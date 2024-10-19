@@ -72,7 +72,10 @@ impl<'a> Face<'a> {
     pub fn normal(&self) -> Option<&[f64]> {
         unsafe {
             let face = self.raw_ref();
-            face.normal.is_null().not().then(|| std::slice::from_raw_parts(dbg!(face.normal), self.dim()))
+            face.normal
+                .is_null()
+                .not()
+                .then(|| std::slice::from_raw_parts(dbg!(face.normal), self.dim()))
         }
     }
 
@@ -81,7 +84,10 @@ impl<'a> Face<'a> {
     pub fn center(&self) -> Option<&[f64]> {
         unsafe {
             let face = self.raw_ref();
-            face.center.is_null().not().then(|| std::slice::from_raw_parts(dbg!(face.center), self.dim()))
+            face.center
+                .is_null()
+                .not()
+                .then(|| std::slice::from_raw_parts(dbg!(face.center), self.dim()))
         }
     }
 

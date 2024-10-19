@@ -1,4 +1,4 @@
-use std::{fmt::Debug, marker::PhantomData, ops::Not, slice};
+use std::{fmt::Debug, marker::PhantomData, ops::Not};
 
 use crate::{helpers::QhTypeRef, sys, Set};
 
@@ -41,7 +41,11 @@ impl<'a> Vertex<'a> {
     pub fn point(&self) -> Option<&[f64]> {
         unsafe {
             let vertex = self.raw_ref();
-            vertex.point.is_null().not().then(|| slice::from_raw_parts(vertex.point, self.dim()))
+            vertex
+                .point
+                .is_null()
+                .not()
+                .then(|| std::slice::from_raw_parts(vertex.point, self.dim()))
         }
     }
 
