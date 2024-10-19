@@ -1,4 +1,4 @@
-use std::{fmt::Debug, marker::PhantomData};
+use std::{fmt::Debug, marker::PhantomData, ops::Not};
 
 use crate::{dbg_face_set, helpers::QhTypeRef, sys, Ridge, Set, Vertex};
 
@@ -69,19 +69,19 @@ impl<'a> Face<'a> {
         face.offset
     }
 
-    pub fn normal(&self) -> &[f64] {
+    pub fn normal(&self) -> Option<&[f64]> {
         unsafe {
             let face = self.raw_ref();
-            std::slice::from_raw_parts(face.normal, self.dim())
+            face.normal.is_null().not().then(|| std::slice::from_raw_parts(dbg!(face.normal), self.dim()))
         }
     }
 
     // TODO that union??
 
-    pub fn center(&self) -> &[f64] {
+    pub fn center(&self) -> Option<&[f64]> {
         unsafe {
             let face = self.raw_ref();
-            std::slice::from_raw_parts(face.center, self.dim())
+            face.center.is_null().not().then(|| std::slice::from_raw_parts(dbg!(face.center), self.dim()))
         }
     }
 
