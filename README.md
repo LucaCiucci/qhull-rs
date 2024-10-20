@@ -68,7 +68,7 @@ for simplex in qh.simplices() {
     let vertices = simplex
         .vertices().unwrap()
         .iter()
-        .map(|v| v.id())
+        .map(|v| v.index(&qh).unwrap())
         .collect::<Vec<_>>();
 
     println!("{:?}", vertices);
