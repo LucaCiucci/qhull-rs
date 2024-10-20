@@ -29,9 +29,9 @@ pub trait QhTypeRef: Sized {
 }
 
 pub struct CollectedCoords {
-    pub(crate) coords: Vec<f64>,
-    pub(crate) count: usize,
-    pub(crate) dim: usize,
+    pub coords: Vec<f64>,
+    pub count: usize,
+    pub dim: usize,
 }
 
 /// Collects coordinates from an iterator of points.
