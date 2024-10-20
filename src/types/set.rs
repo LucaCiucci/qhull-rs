@@ -37,7 +37,7 @@ impl<'a, T: QhTypeRef> Set<'a, T> {
         }
     }
 
-    pub fn iter(&self) -> SetIterator<'a, T> {
+    pub fn iter(&self) -> impl Iterator<Item = T> + 'a {
         SetIterator::new(self)
     }
 }
@@ -47,7 +47,7 @@ pub(crate) fn dbg_face_set(set: Option<Set<Face>>) -> Option<Vec<u32>> {
 }
 
 #[derive(Clone, Copy)]
-pub struct SetIterator<'a, T: QhTypeRef> {
+struct SetIterator<'a, T: QhTypeRef> {
     ptr: *mut *mut T::FFIType,
     dim: usize,
     _phantom: PhantomData<&'a T>,
