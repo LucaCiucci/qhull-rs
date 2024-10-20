@@ -80,12 +80,12 @@ impl<'a> Qh<'a> {
             .build_managed(dim, coords)
     }
 
-    /// Get all the faces in the hull
+    /// Get all the facets in the hull
     ///
     /// # Remarks
-    /// * this function will also return the sentinel face, which is the last face in the list of faces.
-    ///   To avoid it, use the [`Qh::faces`] function or just [`filter`](std::iter::Iterator::filter) the iterator
-    ///   checking for [`Face::is_sentinel`].
+    /// * this function will also return the sentinel face, which is the last face in the list of facets.
+    ///   To avoid it, use the [`Qh::facets`] function or just [`filter`](std::iter::Iterator::filter) the iterator
+    ///   checking for [`Facet::is_sentinel`].
     pub fn all_facets(&self) -> impl Iterator<Item = Facet> {
         let mut current = Facet::from_ptr(
             unsafe { sys::qh_get_facet_list(&self.qh) },
@@ -98,9 +98,9 @@ impl<'a> Qh<'a> {
         }))
     }
 
-    /// Get all the faces in the hull in reverse order
+    /// Get all the facets in the hull in reverse order
     ///
-    /// See [`Qh::all_faces`] for more information.
+    /// See [`Qh::all_facets`] for more information.
     pub fn all_facets_rev(&self) -> impl Iterator<Item = Facet> {
         let mut current = Facet::from_ptr(
             unsafe { sys::qh_get_facet_tail(&self.qh) },
@@ -113,11 +113,11 @@ impl<'a> Qh<'a> {
         }))
     }
 
-    /// Get the faces in the hull
+    /// Get the facets in the hull
     ///
     /// # Remarks
-    /// * this function will not return the sentinel face, which is the last face in the list of faces.
-    ///   To get it, use the [`Qh::all_faces`] function.
+    /// * this function will not return the sentinel face, which is the last face in the list of facets.
+    ///   To get it, use the [`Qh::all_facets`] function.
     pub fn facets(&self) -> impl Iterator<Item = Facet> {
         self.all_facets().filter(|f| !f.is_sentinel())
     }
@@ -150,7 +150,7 @@ impl<'a> Qh<'a> {
         self.all_vertices().filter(|v| !v.is_sentinel())
     }
 
-    /// Number of faces in the hull (sentinel excluded)
+    /// Number of facets in the hull (sentinel excluded)
     ///
     /// # Example
     /// ```
@@ -162,9 +162,9 @@ impl<'a> Qh<'a> {
     /// #         [0.0, 1.0],
     /// #         [0.25, 0.25]
     /// #    ]).unwrap();
-    /// assert_eq!(qh.num_faces(), qh.faces().count());
+    /// assert_eq!(qh.num_facets(), qh.facets().count());
     /// ```
-    pub fn num_faces(&self) -> usize {
+    pub fn num_facets(&self) -> usize {
         unsafe { sys::qh_get_num_facets(&self.qh) as _ }
     }
 
