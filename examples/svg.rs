@@ -92,7 +92,8 @@ fn main() {
             .set("stroke-width", 0.5));
     }
 
-    svg::write(std::io::stdout(), &doc).unwrap()
+    svg::write(std::io::stdout(), &doc).unwrap();
+    println!("\n<!-- redirect stdout to a file to save the SVG -->");
 }
 
 fn points() -> impl Iterator<Item = [f64; 2]> {
