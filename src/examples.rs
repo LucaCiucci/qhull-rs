@@ -10,3 +10,7 @@
 //! ```
 #![doc = include_str!("../examples/delaunay.rs")]
 //! ```
+//! ## Delaunay triangulation (SVG)
+//! ```
+#![doc = include_str!("../examples/svg.rs")]
+//! ```

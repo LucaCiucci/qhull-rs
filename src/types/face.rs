@@ -6,7 +6,11 @@ use crate::{dbg_face_set, helpers::QhTypeRef, sys, Ridge, Set, Vertex};
 ///
 /// This is a reference to the underlying qhull [`facetT`](qhull_sys::facetT).
 #[derive(Clone, Copy)]
-pub struct Facet<'a>(*mut sys::facetT, usize, PhantomData<&'a ()>);
+pub struct Facet<'a> {
+    ptr: *mut sys::facetT,
+    dim: usize,
+    _marker: PhantomData<&'a ()>,
+}
 
 impl<'a> Debug for Facet<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -54,8 +58,23 @@ impl<'a> Debug for Facet<'a> {
 }
 
 impl<'a> Facet<'a> {
+    /// Check if the vertex is a sentinel (id = 0)
+    ///
+    /// A sentinel is a special vertex that is used to mark the end of a list
+    /// an it (should) have:
+    /// - `id = 0`
+    /// - `next = null`
+    /// - `point = null`
+    ///
+    /// # Remarks
+    /// * This method only checks the id of the vertex
     pub fn is_sentinel(&self) -> bool {
         self.id() == 0
+    }
+
+    /// The dimensionality of the face
+    pub fn dim(&self) -> usize {
+        self.dim
     }
 
     pub fn furthest_dist(&self) -> f64 {
@@ -276,16 +295,20 @@ impl<'a> QhTypeRef for Facet<'a> {
         if ptr.is_null() {
             None
         } else {
-            Some(Self(ptr, dim, PhantomData))
+            Some(Self {
+                ptr,
+                dim,
+                _marker: PhantomData,
+            })
         }
     }
 
     unsafe fn raw_ptr(&self) -> *mut Self::FFIType {
-        self.0
+        self.ptr
     }
 
     fn dim(&self) -> usize {
-        self.1
+        self.dim()
     }
 }
 

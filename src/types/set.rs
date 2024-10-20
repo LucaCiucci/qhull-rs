@@ -1,11 +1,13 @@
 use std::ffi::c_void;
 use std::fmt::Debug;
 use std::marker::PhantomData;
+use std::ops::Not;
 
 use crate::helpers::QhTypeRef;
 
 use crate::{sys, Facet};
 
+/// Represents a set of Qhull elements
 #[derive(Clone, Copy)]
 pub struct Set<'a, T: QhTypeRef> {
     set: *mut sys::setT,
@@ -25,18 +27,15 @@ where
 }
 
 impl<'a, T: QhTypeRef> Set<'a, T> {
-    pub fn maybe_new(set: *mut sys::setT, dim: usize) -> Option<Self> {
-        if set.is_null() {
-            None
-        } else {
-            Some(Self {
-                set,
-                dim,
-                _phantom: PhantomData,
-            })
-        }
+    pub(crate) fn maybe_new(set: *mut sys::setT, dim: usize) -> Option<Self> {
+        set.is_null().not().then(|| Self {
+            set,
+            dim,
+            _phantom: PhantomData,
+        })
     }
 
+    /// Iterate over the elements of the set
     pub fn iter(&self) -> impl Iterator<Item = T> + 'a {
         SetIterator::new(self)
     }
@@ -71,6 +70,7 @@ impl<'a, T: QhTypeRef> Iterator for SetIterator<'a, T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
+        // TODO comment on how this works (see the corresponding macro in qhull)
         let value_ptr = unsafe { *self.ptr };
         let element = T::from_ptr(value_ptr, self.dim);
         if element.is_some() {

@@ -6,7 +6,11 @@ use crate::{helpers::QhTypeRef, sys, Qh, Set};
 ///
 /// This is a reference to the underlying qhull [`vertexT`](qhull_sys::vertexT).
 #[derive(Clone, Copy)]
-pub struct Vertex<'a>(*mut sys::vertexT, usize, PhantomData<&'a ()>);
+pub struct Vertex<'a> {
+    ptr: *mut sys::vertexT,
+    dim: usize,
+    _marker: PhantomData<&'a ()>,
+}
 
 impl<'a> Debug for Vertex<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -27,6 +31,16 @@ impl<'a> Debug for Vertex<'a> {
 }
 
 impl<'a> Vertex<'a> {
+    /// Check if the vertex is a sentinel (id = 0)
+    ///
+    /// A sentinel is a special vertex that is used to mark the end of a list
+    /// an it (should) have:
+    /// - `id = 0`
+    /// - `next = null`
+    /// - `point = null`
+    ///
+    /// # Remarks
+    /// * This method only checks the id of the vertex
     pub fn is_sentinel(&self) -> bool {
         self.id() == 0
     }
@@ -38,17 +52,12 @@ impl<'a> Vertex<'a> {
     /// - has no coordinates
     /// - coordinates do not belong to the original set of points
     ///
-    ///
     /// Use [`Vertex::index_unchecked`] if you are sure that the vertex has coordinates
     pub fn index(&self, qh: &Qh) -> Option<usize> {
         debug_assert_eq!(qh.dim, unsafe { sys::qh_get_hull_dim(&qh.qh) as usize });
 
-        let first_ptr = unsafe {
-            sys::qh_get_first_point(&qh.qh) as *const f64
-        };
-        let end_ptr = unsafe {
-            first_ptr.add(sys::qh_get_num_points(&qh.qh) as usize * qh.dim)
-        };
+        let first_ptr = unsafe { sys::qh_get_first_point(&qh.qh) as *const f64 };
+        let end_ptr = unsafe { first_ptr.add(sys::qh_get_num_points(&qh.qh) as usize * qh.dim) };
 
         // perform some additional checks if we own the coordinates
         if let Some(coords_holder) = qh.coords_holder.as_ref() {
@@ -66,7 +75,6 @@ impl<'a> Vertex<'a> {
             return None;
         } else {
             let diff = current_ptr as usize - first_ptr as usize;
-            // TODO maybe this is already stored somewhere?
             let point_size = std::mem::size_of::<f64>() * qh.dim;
             debug_assert_eq!(diff % point_size, 0);
             let index = diff / point_size;
@@ -83,27 +91,34 @@ impl<'a> Vertex<'a> {
         let first_ptr = qh.qh.first_point as *const f64;
         let current_ptr = self.point().map(|s| s.as_ptr()).unwrap_or(std::ptr::null());
         let diff = current_ptr as usize - first_ptr as usize;
-        // TODO maybe this is already stored somewhere?
         let point_size = std::mem::size_of::<f64>() * qh.dim;
         debug_assert_eq!(diff % point_size, 0);
         let index = diff / point_size;
         index
     }
 
+    /// The dimension of the vertex
+    ///
+    /// This corresponds to the number of coordinates of the vertex
     pub fn dim(&self) -> usize {
-        self.1
+        self.dim
     }
 
+    /// Get the next vertex in the list
     pub fn next(&self) -> Option<Vertex<'a>> {
         let vertex = unsafe { self.raw_ref() };
         Self::from_ptr(vertex.next, self.dim())
     }
 
+    /// Get the previous vertex in the list
     pub fn previous(&self) -> Option<Vertex<'a>> {
         let vertex = unsafe { self.raw_ref() };
         Self::from_ptr(vertex.previous, self.dim())
     }
 
+    /// Get the coordinates of the vertex
+    ///
+    /// A vertex might not have coordinates, for example if it is a sentinel.
     pub fn point(&self) -> Option<&'a [f64]> {
         unsafe {
             let vertex = self.raw_ref();
@@ -124,11 +139,13 @@ impl<'a> Vertex<'a> {
         vertex.id
     }
 
+    /// Visit id of the vertex
     pub fn visit_id(&self) -> u32 {
         let vertex = unsafe { self.raw_ref() };
         vertex.visitid
     }
 
+    /// Get the neighbors of the vertex
     pub fn neighbors(&self) -> Option<Set<'a, Vertex<'a>>> {
         let vertex = unsafe { self.raw_ref() };
         Set::maybe_new(vertex.neighbors, self.dim())
@@ -142,27 +159,19 @@ impl<'a> QhTypeRef for Vertex<'a> {
         if ptr.is_null() {
             None
         } else {
-            Some(Self(ptr, dim, PhantomData))
+            Some(Self {
+                ptr,
+                dim,
+                _marker: PhantomData,
+            })
         }
     }
 
     unsafe fn raw_ptr(&self) -> *mut Self::FFIType {
-        self.0
+        self.ptr
     }
 
     fn dim(&self) -> usize {
-        self.1
+        self.dim()
     }
 }
-
-// TODO wrong, maybe we cannot implement DoubleEndedIterator
-//impl<'a> DoubleEndedIterator for RefIterator<Vertex<'a>> {
-//    fn next_back(&mut self) -> Option<Self::Item> {
-//        if let Some(v) = self.0.take() {
-//            self.0 = Vertex::previous(&v);
-//            Some(v)
-//        } else {
-//            None
-//        }
-//    }
-//}
