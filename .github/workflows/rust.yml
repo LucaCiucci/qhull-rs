@@ -31,3 +31,5 @@ jobs:
       run: cargo test --verbose --all
     - name: Run tests (release)
       run: cargo test --verbose --all --release
+    - name: Build documentation
+      run: cargo doc --verbose
