@@ -4,7 +4,7 @@ use std::marker::PhantomData;
 
 use crate::helpers::QhTypeRef;
 
-use crate::{sys, Face};
+use crate::{sys, Facet};
 
 #[derive(Clone, Copy)]
 pub struct Set<'a, T: QhTypeRef> {
@@ -37,17 +37,17 @@ impl<'a, T: QhTypeRef> Set<'a, T> {
         }
     }
 
-    pub fn iter(&self) -> SetIterator<'a, T> {
+    pub fn iter(&self) -> impl Iterator<Item = T> + 'a {
         SetIterator::new(self)
     }
 }
 
-pub(crate) fn dbg_face_set(set: Option<Set<Face>>) -> Option<Vec<u32>> {
+pub(crate) fn dbg_face_set(set: Option<Set<Facet>>) -> Option<Vec<u32>> {
     set.map(|s| s.iter().map(|f| f.id()).collect())
 }
 
 #[derive(Clone, Copy)]
-pub struct SetIterator<'a, T: QhTypeRef> {
+struct SetIterator<'a, T: QhTypeRef> {
     ptr: *mut *mut T::FFIType,
     dim: usize,
     _phantom: PhantomData<&'a T>,

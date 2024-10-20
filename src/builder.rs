@@ -24,7 +24,7 @@ type QhConfigurator = Box<dyn for<'b> Fn(&'b mut Qh) -> Result<(), QhError<'b>> 
 ///     .build(2, &mut points)
 ///     .unwrap();
 ///
-/// assert_eq!(qh.num_faces(), 3);
+/// assert_eq!(qh.num_facets(), 3);
 /// ```
 #[must_use]
 pub struct QhBuilder {
@@ -103,15 +103,15 @@ impl QhBuilder {
     ///     .compute(true) // this is the default
     ///     .build_from_iter(points)
     ///     .unwrap();
-    /// assert_eq!(qh.num_faces(), 3);
+    /// assert_eq!(qh.num_facets(), 3);
     ///
     /// let mut qh = QhBuilder::default()
     ///     .compute(false)
     ///     .build_from_iter(points)
     ///     .unwrap();
-    /// assert_eq!(qh.num_faces(), 0);
+    /// assert_eq!(qh.num_facets(), 0);
     /// qh.compute().unwrap();
-    /// assert_eq!(qh.num_faces(), 3);
+    /// assert_eq!(qh.num_facets(), 3);
     /// ```
     pub fn compute(mut self, compute: bool) -> Self {
         self.compute = compute;
@@ -151,7 +151,7 @@ impl QhBuilder {
     /// let qh = QhBuilder::default()
     ///     .build(2, &mut points).unwrap();
     ///
-    /// assert_eq!(qh.num_faces(), 3);
+    /// assert_eq!(qh.num_facets(), 3);
     /// ```
     ///
     /// # Panics
@@ -186,7 +186,7 @@ impl QhBuilder {
 
             let mut qh = Qh {
                 qh,
-                _coords_holder: None,
+                coords_holder: None,
                 dim,
                 buffers,
                 owned_values: Default::default(),
@@ -239,7 +239,7 @@ impl QhBuilder {
     ///         0.25, 0.25,
     ///     ]).unwrap();
     ///
-    /// assert_eq!(qh.num_faces(), 3);
+    /// assert_eq!(qh.num_facets(), 3);
     /// ```
     pub fn build_managed(
         self,
@@ -251,8 +251,8 @@ impl QhBuilder {
         let mut qh: Qh<'static> = self.build(dim, unsafe {
             std::slice::from_raw_parts_mut(points_ptr, points.len())
         })?;
-        assert!(qh._coords_holder.is_none());
-        qh._coords_holder = Some(points);
+        assert!(qh.coords_holder.is_none());
+        qh.coords_holder = Some(points);
         Ok(qh)
     }
 
@@ -269,7 +269,7 @@ impl QhBuilder {
     ///         [0.25, 0.25],
     ///     ]).unwrap();
     ///
-    /// assert_eq!(qh.num_faces(), 3);
+    /// assert_eq!(qh.num_facets(), 3);
     /// ```
     pub fn build_from_iter<I>(
         self,

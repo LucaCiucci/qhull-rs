@@ -25,7 +25,7 @@ pub mod examples;
 /// See the main [`crate` documentation](crate) and the [`examples`] module/folder for some examples.
 pub struct Qh<'a> {
     qh: sys::qhT,
-    _coords_holder: Option<Vec<f64>>,
+    coords_holder: Option<Vec<f64>>,
     dim: usize,
     buffers: IOBuffers,
     owned_values: OwnedValues,
@@ -80,34 +80,114 @@ impl<'a> Qh<'a> {
             .build_managed(dim, coords)
     }
 
-    /// Get all the faces in the hull
+    /// Get all the facets in the hull
     ///
     /// # Remarks
-    /// * this function will also return the sentinel face, which is the last face in the list of faces.
-    ///   To avoid it, use the [`Qh::faces`] function or just [`filter`](std::iter::Iterator::filter) the iterator
-    ///   checking for [`Face::is_sentinel`].
-    pub fn all_faces(&self) -> FaceIterator {
-        unsafe {
-            let list = sys::qh_get_facet_list(&self.qh);
-            FaceIterator::new(Face::from_ptr(list, self.dim))
-        }
+    /// * this function will also return the sentinel face, which is the last face in the list of facets.
+    ///   To avoid it, use the [`Qh::facets`] function or just [`filter`](std::iter::Iterator::filter) the iterator
+    ///   checking for [`Facet::is_sentinel`].
+    pub fn all_facets(&self) -> impl Iterator<Item = Facet> {
+        let mut current = Facet::from_ptr(
+            unsafe { sys::qh_get_facet_list(&self.qh) },
+            self.dim,
+        );
+
+        std::iter::from_fn(move || current.take().map(|v| {
+            current = v.next();
+            v
+        }))
     }
 
-    /// Get the faces in the hull
+    /// Get all the facets in the hull in reverse order
+    ///
+    /// See [`Qh::all_facets`] for more information.
+    pub fn all_facets_rev(&self) -> impl Iterator<Item = Facet> {
+        let mut current = Facet::from_ptr(
+            unsafe { sys::qh_get_facet_tail(&self.qh) },
+            self.dim,
+        );
+
+        std::iter::from_fn(move || current.take().map(|v| {
+            current = v.previous();
+            v
+        }))
+    }
+
+    /// Get the facets in the hull
     ///
     /// # Remarks
-    /// * this function will not return the sentinel face, which is the last face in the list of faces.
-    ///   To get it, use the [`Qh::all_faces`] function.
-    pub fn faces(&self) -> impl Iterator<Item = Face> {
-        self.all_faces().filter(|f| !f.is_sentinel())
+    /// * this function will not return the sentinel face, which is the last face in the list of facets.
+    ///   To get it, use the [`Qh::all_facets`] function.
+    pub fn facets(&self) -> impl Iterator<Item = Facet> {
+        self.all_facets().filter(|f| !f.is_sentinel())
     }
 
-    pub fn simplices(&self) -> impl Iterator<Item = Face> {
-        self.faces().filter(|f| f.simplicial())
+    pub fn all_vertices(&self) -> impl Iterator<Item = Vertex> {
+        let mut current = Vertex::from_ptr(
+            unsafe { sys::qh_get_vertex_list(&self.qh) },
+            self.dim,
+        );
+
+        std::iter::from_fn(move || current.take().map(|v| {
+            current = v.next();
+            v
+        }))
     }
 
-    pub fn num_faces(&self) -> usize {
+    pub fn all_vertices_rev(&self) -> impl Iterator<Item = Vertex> {
+        let mut current = Vertex::from_ptr(
+            unsafe { sys::qh_get_vertex_tail(&self.qh) },
+            self.dim,
+        );
+
+        std::iter::from_fn(move || current.take().map(|v| {
+            current = v.previous();
+            v
+        }))
+    }
+
+    pub fn vertices(&self) -> impl Iterator<Item = Vertex> {
+        self.all_vertices().filter(|v| !v.is_sentinel())
+    }
+
+    /// Number of facets in the hull (sentinel excluded)
+    ///
+    /// # Example
+    /// ```
+    /// # use qhull::*;
+    /// # let mut qh = Qh::builder()
+    /// #     .build_from_iter([
+    /// #         [0.0, 0.0],
+    /// #         [1.0, 0.0],
+    /// #         [0.0, 1.0],
+    /// #         [0.25, 0.25]
+    /// #    ]).unwrap();
+    /// assert_eq!(qh.num_facets(), qh.facets().count());
+    /// ```
+    pub fn num_facets(&self) -> usize {
         unsafe { sys::qh_get_num_facets(&self.qh) as _ }
+    }
+
+    /// Number of vertices in the hull (sentinel excluded)
+    ///
+    /// # Example
+    /// ```
+    /// # use qhull::*;
+    /// # let mut qh = Qh::builder()
+    /// #     .build_from_iter([
+    /// #         [0.0, 0.0],
+    /// #         [1.0, 0.0],
+    /// #         [0.0, 1.0],
+    /// #         [0.25, 0.25]
+    /// #    ]).unwrap();
+    /// assert_eq!(qh.num_vertices(), qh.vertices().count());
+    /// ```
+    pub fn num_vertices(&self) -> usize {
+        unsafe { sys::qh_get_num_vertices(&self.qh) as _ }
+    }
+
+    pub fn simplices(&self) -> impl Iterator<Item = Facet> {
+        self.facets().filter(|f| f.simplicial())
     }
 
     /// Try a function on the qhull instance
@@ -161,6 +241,47 @@ impl<'a> Qh<'a> {
         f: impl FnOnce(&mut sys::qhT) -> R,
     ) -> Result<R, QhError<'b>> {
         unsafe { QhError::try_on_raw(&mut qh.qh, &mut qh.buffers.err_file, f) }
+    }
+
+    /// Get the original index of a vertex
+    ///
+    /// Returns none if the vertex:
+    /// - is a sentinel
+    /// - has no coordinates
+    /// - coordinates do not belong to the original set of points
+    pub fn vertex_index(&self, vertex: &Vertex) -> Option<usize> { // TODO an unchecked version
+        debug_assert_eq!(self.dim, unsafe { sys::qh_get_hull_dim(&self.qh) as usize });
+
+        let first_ptr = unsafe {
+            sys::qh_get_first_point(&self.qh) as *const f64
+        };
+        let end_ptr = unsafe {
+            first_ptr.add(sys::qh_get_num_points(&self.qh) as usize * self.dim)
+        };
+
+        // perform some additional checks if we own the coordinates
+        if let Some(coords_holder) = self.coords_holder.as_ref() {
+            debug_assert_eq!(first_ptr, coords_holder.as_slice().as_ptr());
+            debug_assert_eq!(end_ptr, unsafe { coords_holder.as_slice().as_ptr().add(coords_holder.len()) });
+        }
+
+        if vertex.is_sentinel() {
+            return None;
+        }
+
+        let current_ptr = vertex.point()?.as_ptr();
+
+        if current_ptr < first_ptr || current_ptr >= end_ptr {
+            return None;
+        } else {
+            let diff = current_ptr as usize - first_ptr as usize;
+            // TODO maybe this is already stored somewhere?
+            let point_size = std::mem::size_of::<f64>() * self.dim;
+            assert_eq!(diff % point_size, 0);
+            let index = diff / point_size;
+            debug_assert!(index < unsafe { sys::qh_get_num_points(&self.qh) as usize });
+            Some(index)
+        }
     }
 }
 

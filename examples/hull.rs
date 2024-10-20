@@ -9,14 +9,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         [0.25, 0.25],
     ])?;
 
-    assert_eq!(qh.num_faces(), 3);
+    assert_eq!(qh.num_facets(), 3);
 
     for simplex in qh.simplices() {
         let vertices = simplex
             .vertices()
             .unwrap()
             .iter()
-            .map(|v| v.id())
+            .map(|v| v.index(&qh).unwrap())
             .collect::<Vec<_>>();
 
         println!("{:?}", vertices);

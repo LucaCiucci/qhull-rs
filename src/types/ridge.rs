@@ -1,6 +1,6 @@
 use std::{fmt::Debug, marker::PhantomData};
 
-use crate::{helpers::QhTypeRef, sys, Face, Set, Vertex};
+use crate::{helpers::QhTypeRef, sys, Facet, Set, Vertex};
 
 #[derive(Clone, Copy)]
 pub struct Ridge<'a> {
@@ -33,14 +33,14 @@ impl<'a> Ridge<'a> {
         Set::maybe_new(ridge.vertices, self.dim)
     }
 
-    pub fn top(&self) -> Face<'a> {
+    pub fn top(&self) -> Facet<'a> {
         let ridge = unsafe { self.raw_ref() };
-        Face::from_ptr(ridge.top, self.dim).unwrap()
+        Facet::from_ptr(ridge.top, self.dim).unwrap()
     }
 
-    pub fn bottom(&self) -> Face<'a> {
+    pub fn bottom(&self) -> Facet<'a> {
         let ridge = unsafe { self.raw_ref() };
-        Face::from_ptr(ridge.bottom, self.dim).unwrap()
+        Facet::from_ptr(ridge.bottom, self.dim).unwrap()
     }
 
     pub fn id(&self) -> u32 {

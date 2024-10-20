@@ -2,10 +2,13 @@ use std::{fmt::Debug, marker::PhantomData, ops::Not};
 
 use crate::{dbg_face_set, helpers::QhTypeRef, sys, Ridge, Set, Vertex};
 
+/// A face of the convex hull
+///
+/// This is a reference to the underlying qhull [`facetT`](qhull_sys::facetT).
 #[derive(Clone, Copy)]
-pub struct Face<'a>(*mut sys::facetT, usize, PhantomData<&'a ()>);
+pub struct Facet<'a>(*mut sys::facetT, usize, PhantomData<&'a ()>);
 
-impl<'a> Debug for Face<'a> {
+impl<'a> Debug for Facet<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Face")
             .field("id", &self.id())
@@ -14,6 +17,7 @@ impl<'a> Debug for Face<'a> {
             .field("max_outside", &self.max_outside())
             .field("offset", &self.offset())
             .field("normal", &self.normal())
+            .field("f", &"...")// TODO ???
             .field("center", &self.center())
             .field("previous", &self.previous().map(|f| f.id()))
             .field("next", &self.next().map(|f| f.id()))
@@ -49,7 +53,7 @@ impl<'a> Debug for Face<'a> {
     }
 }
 
-impl<'a> Face<'a> {
+impl<'a> Facet<'a> {
     pub fn is_sentinel(&self) -> bool {
         self.id() == 0
     }
@@ -91,12 +95,12 @@ impl<'a> Face<'a> {
         }
     }
 
-    pub fn previous(&self) -> Option<Face<'a>> {
+    pub fn previous(&self) -> Option<Facet<'a>> {
         let face = unsafe { self.raw_ref() };
         Self::from_ptr(face.previous, self.dim())
     }
 
-    pub fn next(&self) -> Option<Face<'a>> {
+    pub fn next(&self) -> Option<Facet<'a>> {
         let face = unsafe { self.raw_ref() };
         Self::from_ptr(face.next, self.dim())
     }
@@ -115,7 +119,7 @@ impl<'a> Face<'a> {
         }
     }
 
-    pub fn neighbors(&self) -> Option<Set<'a, Face<'a>>> {
+    pub fn neighbors(&self) -> Option<Set<'a, Facet<'a>>> {
         let face = unsafe { self.raw_ref() };
         Set::maybe_new(face.neighbors, self.dim())
     }
@@ -265,7 +269,7 @@ impl<'a> Face<'a> {
     }
 }
 
-impl<'a> QhTypeRef for Face<'a> {
+impl<'a> QhTypeRef for Facet<'a> {
     type FFIType = sys::facetT;
 
     fn from_ptr(ptr: *mut Self::FFIType, dim: usize) -> Option<Self> {
@@ -285,32 +289,14 @@ impl<'a> QhTypeRef for Face<'a> {
     }
 }
 
-pub struct FaceIterator<'a>(Option<Face<'a>>);
-
-impl<'a> FaceIterator<'a> {
-    pub fn new(face: Option<Face<'a>>) -> Self {
-        Self(face)
-    }
-}
-
-impl<'a> Iterator for FaceIterator<'a> {
-    type Item = Face<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let element = self.0;
-        if let Some(element) = element {
-            self.0 = element.next();
-        }
-        element
-    }
-}
-
-impl<'a> DoubleEndedIterator for FaceIterator<'a> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        let element = self.0;
-        if let Some(element) = element {
-            self.0 = element.previous();
-        }
-        element
-    }
-}
+// TODO wrong, maybe we cannot implement DoubleEndedIterator
+//impl<'a> DoubleEndedIterator for RefIterator<Face<'a>> {
+//    fn next_back(&mut self) -> Option<Self::Item> {
+//        if let Some(v) = self.0.take() {
+//            self.0 = Face::previous(&v);
+//            Some(v)
+//        } else {
+//            None
+//        }
+//    }
+//}

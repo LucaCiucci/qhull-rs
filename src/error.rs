@@ -1,6 +1,6 @@
 use std::{error::Error, fmt::Display};
 
-use crate::{helpers::QhTypeRef, sys, tmp_file::TmpFile, Face, Ridge, Vertex};
+use crate::{helpers::QhTypeRef, sys, tmp_file::TmpFile, Facet, Ridge, Vertex};
 
 macro_rules! define_error_kinds {
     (
@@ -52,7 +52,7 @@ define_error_kinds! {
 pub struct QhError<'a> {
     pub kind: QhErrorKind,
     pub error_message: Option<String>,
-    pub face: Option<Face<'a>>,
+    pub face: Option<Facet<'a>>,
     pub ridge: Option<Ridge<'a>>,
     pub vertex: Option<Vertex<'a>>,
 }
@@ -217,7 +217,7 @@ impl<'a> QhError<'a> {
             Err(QhError {
                 kind,
                 error_message: msg,
-                face: Face::from_ptr(qh.tracefacet, qh.input_dim as _), // TODO is this dim correct?
+                face: Facet::from_ptr(qh.tracefacet, qh.input_dim as _), // TODO is this dim correct?
                 ridge: Ridge::from_ptr(qh.traceridge, qh.input_dim as _), // TODO is this dim correct?
                 vertex: Vertex::from_ptr(qh.tracevertex, qh.input_dim as _), // TODO is this dim correct?
             })

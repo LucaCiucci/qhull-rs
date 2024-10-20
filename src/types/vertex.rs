@@ -1,7 +1,10 @@
 use std::{fmt::Debug, marker::PhantomData, ops::Not};
 
-use crate::{helpers::QhTypeRef, sys, Set};
+use crate::{helpers::QhTypeRef, sys, Qh, Set};
 
+/// A vertex of the convex hull
+///
+/// This is a reference to the underlying qhull [`vertexT`](qhull_sys::vertexT).
 #[derive(Clone, Copy)]
 pub struct Vertex<'a>(*mut sys::vertexT, usize, PhantomData<&'a ()>);
 
@@ -24,6 +27,17 @@ impl<'a> Debug for Vertex<'a> {
 }
 
 impl<'a> Vertex<'a> {
+    pub fn is_sentinel(&self) -> bool {
+        self.id() == 0
+    }
+
+    /// Get the index of the vertex in the input points
+    ///
+    /// See [`Qh::vertex_index`] for more information.
+    pub fn index(&self, qh: &Qh) -> Option<usize> {
+        Qh::vertex_index(qh, self)
+    }
+
     pub fn dim(&self) -> usize {
         self.1
     }
@@ -49,6 +63,10 @@ impl<'a> Vertex<'a> {
         }
     }
 
+    /// Qhull id of the vertex
+    ///
+    /// # Warning
+    /// This is not the index of the vertex in the input points, use [`Vertex::index`] for that.
     pub fn id(&self) -> u32 {
         let vertex = unsafe { self.raw_ref() };
         vertex.id
@@ -84,3 +102,15 @@ impl<'a> QhTypeRef for Vertex<'a> {
         self.1
     }
 }
+
+// TODO wrong, maybe we cannot implement DoubleEndedIterator
+//impl<'a> DoubleEndedIterator for RefIterator<Vertex<'a>> {
+//    fn next_back(&mut self) -> Option<Self::Item> {
+//        if let Some(v) = self.0.take() {
+//            self.0 = Vertex::previous(&v);
+//            Some(v)
+//        } else {
+//            None
+//        }
+//    }
+//}
