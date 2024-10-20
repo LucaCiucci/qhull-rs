@@ -250,21 +250,19 @@ impl<'a> Qh<'a> {
     /// - has no coordinates
     /// - coordinates do not belong to the original set of points
     pub fn vertex_index(&self, vertex: &Vertex) -> Option<usize> { // TODO an unchecked version
-        // TODO maybe this is already stored somewhere?
-        let point_size = std::mem::size_of::<f64>() * self.dim;
         debug_assert_eq!(self.dim, unsafe { sys::qh_get_hull_dim(&self.qh) as usize });
 
         let first_ptr = unsafe {
             sys::qh_get_first_point(&self.qh) as *const f64
         };
         let end_ptr = unsafe {
-            first_ptr.add(sys::qh_get_num_points(&self.qh) as usize * point_size)
+            first_ptr.add(sys::qh_get_num_points(&self.qh) as usize * self.dim)
         };
 
         // perform some additional checks if we own the coordinates
         if let Some(coords_holder) = self.coords_holder.as_ref() {
             debug_assert_eq!(first_ptr, coords_holder.as_slice().as_ptr());
-            debug_assert_eq!(end_ptr, unsafe { coords_holder.as_slice().as_ptr().add(coords_holder.len() * std::mem::size_of::<f64>()) });
+            debug_assert_eq!(end_ptr, unsafe { coords_holder.as_slice().as_ptr().add(coords_holder.len()) });
         }
 
         if vertex.is_sentinel() {
@@ -277,6 +275,8 @@ impl<'a> Qh<'a> {
             return None;
         } else {
             let diff = current_ptr as usize - first_ptr as usize;
+            // TODO maybe this is already stored somewhere?
+            let point_size = std::mem::size_of::<f64>() * self.dim;
             assert_eq!(diff % point_size, 0);
             let index = diff / point_size;
             debug_assert!(index < unsafe { sys::qh_get_num_points(&self.qh) as usize });
