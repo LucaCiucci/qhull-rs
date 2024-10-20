@@ -11,7 +11,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .vertices()
                 .unwrap()
                 .iter()
-                .map(|v| v.id())
+                .map(|v| v.index(&qh).unwrap())
                 .collect::<Vec<_>>()
         );
     }
@@ -23,7 +23,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             f.vertices()
                 .unwrap()
                 .iter()
-                .map(|v| v.id() - 1)
+                .map(|v| v.index(&qh).unwrap())
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
