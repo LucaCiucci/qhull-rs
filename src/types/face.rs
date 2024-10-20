@@ -14,6 +14,7 @@ impl<'a> Debug for Face<'a> {
             .field("max_outside", &self.max_outside())
             .field("offset", &self.offset())
             .field("normal", &self.normal())
+            .field("f", &"...")// TODO ???
             .field("center", &self.center())
             .field("previous", &self.previous().map(|f| f.id()))
             .field("next", &self.next().map(|f| f.id()))
@@ -285,32 +286,14 @@ impl<'a> QhTypeRef for Face<'a> {
     }
 }
 
-pub struct FaceIterator<'a>(Option<Face<'a>>);
-
-impl<'a> FaceIterator<'a> {
-    pub fn new(face: Option<Face<'a>>) -> Self {
-        Self(face)
-    }
-}
-
-impl<'a> Iterator for FaceIterator<'a> {
-    type Item = Face<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let element = self.0;
-        if let Some(element) = element {
-            self.0 = element.next();
-        }
-        element
-    }
-}
-
-impl<'a> DoubleEndedIterator for FaceIterator<'a> {
-    fn next_back(&mut self) -> Option<Self::Item> {
-        let element = self.0;
-        if let Some(element) = element {
-            self.0 = element.previous();
-        }
-        element
-    }
-}
+// TODO wrong, maybe we cannot implement DoubleEndedIterator
+//impl<'a> DoubleEndedIterator for RefIterator<Face<'a>> {
+//    fn next_back(&mut self) -> Option<Self::Item> {
+//        if let Some(v) = self.0.take() {
+//            self.0 = Face::previous(&v);
+//            Some(v)
+//        } else {
+//            None
+//        }
+//    }
+//}

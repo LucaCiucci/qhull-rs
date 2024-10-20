@@ -186,7 +186,7 @@ impl QhBuilder {
 
             let mut qh = Qh {
                 qh,
-                _coords_holder: None,
+                coords_holder: None,
                 dim,
                 buffers,
                 owned_values: Default::default(),
@@ -251,8 +251,8 @@ impl QhBuilder {
         let mut qh: Qh<'static> = self.build(dim, unsafe {
             std::slice::from_raw_parts_mut(points_ptr, points.len())
         })?;
-        assert!(qh._coords_holder.is_none());
-        qh._coords_holder = Some(points);
+        assert!(qh.coords_holder.is_none());
+        qh.coords_holder = Some(points);
         Ok(qh)
     }
 

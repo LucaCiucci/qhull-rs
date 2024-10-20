@@ -1,6 +1,6 @@
 use std::{fmt::Debug, marker::PhantomData, ops::Not};
 
-use crate::{helpers::QhTypeRef, sys, Set};
+use crate::{helpers::QhTypeRef, sys, Qh, Set};
 
 #[derive(Clone, Copy)]
 pub struct Vertex<'a>(*mut sys::vertexT, usize, PhantomData<&'a ()>);
@@ -24,6 +24,14 @@ impl<'a> Debug for Vertex<'a> {
 }
 
 impl<'a> Vertex<'a> {
+    pub fn is_sentinel(&self) -> bool {
+        self.id() == 0
+    }
+
+    pub fn index(&self, qh: &Qh) -> Option<usize> {
+        Qh::vertex_index(qh, self)
+    }
+
     pub fn dim(&self) -> usize {
         self.1
     }
@@ -84,3 +92,15 @@ impl<'a> QhTypeRef for Vertex<'a> {
         self.1
     }
 }
+
+// TODO wrong, maybe we cannot implement DoubleEndedIterator
+//impl<'a> DoubleEndedIterator for RefIterator<Vertex<'a>> {
+//    fn next_back(&mut self) -> Option<Self::Item> {
+//        if let Some(v) = self.0.take() {
+//            self.0 = Vertex::previous(&v);
+//            Some(v)
+//        } else {
+//            None
+//        }
+//    }
+//}
