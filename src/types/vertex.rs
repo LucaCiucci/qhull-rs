@@ -2,6 +2,9 @@ use std::{fmt::Debug, marker::PhantomData, ops::Not};
 
 use crate::{helpers::QhTypeRef, sys, Qh, Set};
 
+/// A vertex of the convex hull
+///
+/// This is a reference to the underlying qhull [`vertexT`](qhull_sys::vertexT).
 #[derive(Clone, Copy)]
 pub struct Vertex<'a>(*mut sys::vertexT, usize, PhantomData<&'a ()>);
 
@@ -28,6 +31,9 @@ impl<'a> Vertex<'a> {
         self.id() == 0
     }
 
+    /// Get the index of the vertex in the input points
+    ///
+    /// See [`Qh::vertex_index`] for more information.
     pub fn index(&self, qh: &Qh) -> Option<usize> {
         Qh::vertex_index(qh, self)
     }
@@ -57,6 +63,10 @@ impl<'a> Vertex<'a> {
         }
     }
 
+    /// Qhull id of the vertex
+    ///
+    /// # Warning
+    /// This is not the index of the vertex in the input points, use [`Vertex::index`] for that.
     pub fn id(&self) -> u32 {
         let vertex = unsafe { self.raw_ref() };
         vertex.id
