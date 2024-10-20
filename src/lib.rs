@@ -86,8 +86,8 @@ impl<'a> Qh<'a> {
     /// * this function will also return the sentinel face, which is the last face in the list of faces.
     ///   To avoid it, use the [`Qh::faces`] function or just [`filter`](std::iter::Iterator::filter) the iterator
     ///   checking for [`Face::is_sentinel`].
-    pub fn all_faces(&self) -> impl Iterator<Item = Face> {
-        let mut current = Face::from_ptr(
+    pub fn all_facets(&self) -> impl Iterator<Item = Facet> {
+        let mut current = Facet::from_ptr(
             unsafe { sys::qh_get_facet_list(&self.qh) },
             self.dim,
         );
@@ -101,8 +101,8 @@ impl<'a> Qh<'a> {
     /// Get all the faces in the hull in reverse order
     ///
     /// See [`Qh::all_faces`] for more information.
-    pub fn all_faces_rev(&self) -> impl Iterator<Item = Face> {
-        let mut current = Face::from_ptr(
+    pub fn all_facets_rev(&self) -> impl Iterator<Item = Facet> {
+        let mut current = Facet::from_ptr(
             unsafe { sys::qh_get_facet_tail(&self.qh) },
             self.dim,
         );
@@ -118,8 +118,8 @@ impl<'a> Qh<'a> {
     /// # Remarks
     /// * this function will not return the sentinel face, which is the last face in the list of faces.
     ///   To get it, use the [`Qh::all_faces`] function.
-    pub fn faces(&self) -> impl Iterator<Item = Face> {
-        self.all_faces().filter(|f| !f.is_sentinel())
+    pub fn facets(&self) -> impl Iterator<Item = Facet> {
+        self.all_facets().filter(|f| !f.is_sentinel())
     }
 
     pub fn all_vertices(&self) -> impl Iterator<Item = Vertex> {
@@ -186,8 +186,8 @@ impl<'a> Qh<'a> {
         unsafe { sys::qh_get_num_vertices(&self.qh) as _ }
     }
 
-    pub fn simplices(&self) -> impl Iterator<Item = Face> {
-        self.faces().filter(|f| f.simplicial())
+    pub fn simplices(&self) -> impl Iterator<Item = Facet> {
+        self.facets().filter(|f| f.simplicial())
     }
 
     /// Try a function on the qhull instance

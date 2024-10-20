@@ -2,10 +2,13 @@ use std::{fmt::Debug, marker::PhantomData, ops::Not};
 
 use crate::{dbg_face_set, helpers::QhTypeRef, sys, Ridge, Set, Vertex};
 
+/// A face of the convex hull
+///
+/// This is a reference to the underlying qhull [`facetT`](qhull_sys::facetT).
 #[derive(Clone, Copy)]
-pub struct Face<'a>(*mut sys::facetT, usize, PhantomData<&'a ()>);
+pub struct Facet<'a>(*mut sys::facetT, usize, PhantomData<&'a ()>);
 
-impl<'a> Debug for Face<'a> {
+impl<'a> Debug for Facet<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Face")
             .field("id", &self.id())
@@ -50,7 +53,7 @@ impl<'a> Debug for Face<'a> {
     }
 }
 
-impl<'a> Face<'a> {
+impl<'a> Facet<'a> {
     pub fn is_sentinel(&self) -> bool {
         self.id() == 0
     }
@@ -92,12 +95,12 @@ impl<'a> Face<'a> {
         }
     }
 
-    pub fn previous(&self) -> Option<Face<'a>> {
+    pub fn previous(&self) -> Option<Facet<'a>> {
         let face = unsafe { self.raw_ref() };
         Self::from_ptr(face.previous, self.dim())
     }
 
-    pub fn next(&self) -> Option<Face<'a>> {
+    pub fn next(&self) -> Option<Facet<'a>> {
         let face = unsafe { self.raw_ref() };
         Self::from_ptr(face.next, self.dim())
     }
@@ -116,7 +119,7 @@ impl<'a> Face<'a> {
         }
     }
 
-    pub fn neighbors(&self) -> Option<Set<'a, Face<'a>>> {
+    pub fn neighbors(&self) -> Option<Set<'a, Facet<'a>>> {
         let face = unsafe { self.raw_ref() };
         Set::maybe_new(face.neighbors, self.dim())
     }
@@ -266,7 +269,7 @@ impl<'a> Face<'a> {
     }
 }
 
-impl<'a> QhTypeRef for Face<'a> {
+impl<'a> QhTypeRef for Facet<'a> {
     type FFIType = sys::facetT;
 
     fn from_ptr(ptr: *mut Self::FFIType, dim: usize) -> Option<Self> {

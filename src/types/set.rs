@@ -4,7 +4,7 @@ use std::marker::PhantomData;
 
 use crate::helpers::QhTypeRef;
 
-use crate::{sys, Face};
+use crate::{sys, Facet};
 
 #[derive(Clone, Copy)]
 pub struct Set<'a, T: QhTypeRef> {
@@ -42,7 +42,7 @@ impl<'a, T: QhTypeRef> Set<'a, T> {
     }
 }
 
-pub(crate) fn dbg_face_set(set: Option<Set<Face>>) -> Option<Vec<u32>> {
+pub(crate) fn dbg_face_set(set: Option<Set<Facet>>) -> Option<Vec<u32>> {
     set.map(|s| s.iter().map(|f| f.id()).collect())
 }
 
