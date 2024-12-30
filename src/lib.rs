@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
 
-use std::{marker::PhantomData, rc::Rc};
+use std::{cell::{RefCell, UnsafeCell}, marker::PhantomData, rc::Rc};
 
 use helpers::{prepare_delaunay_points, CollectedCoords, QhTypeRef};
 use io_buffers::IOBuffers;
@@ -24,10 +24,10 @@ pub mod examples;
 ///
 /// See the main [`crate` documentation](crate) and the [`examples`] module/folder for some examples.
 pub struct Qh<'a> {
-    qh: sys::qhT,
+    qh: UnsafeCell<sys::qhT>,
     coords_holder: Option<Vec<f64>>,
     dim: usize,
-    buffers: IOBuffers,
+    buffers: RefCell<IOBuffers>,
     owned_values: OwnedValues,
     phantom: PhantomData<&'a ()>,
 }
@@ -40,17 +40,17 @@ impl<'a> Qh<'a> {
 
     /// Compute the convex hull
     pub fn compute(&mut self) -> Result<(), QhError> {
-        unsafe { Qh::try_on_qh(self, |qh| sys::qh_qhull(qh)) }
+        unsafe { Qh::try_on_qh_mut(self, |qh| sys::qh_qhull(qh)) }
     }
 
     /// Check the output of the qhull instance
     pub fn check_output(&mut self) -> Result<(), QhError> {
-        unsafe { Qh::try_on_qh(self, |qh| sys::qh_check_output(qh)) }
+        unsafe { Qh::try_on_qh_mut(self, |qh| sys::qh_check_output(qh)) }
     }
 
     pub fn check_points(&mut self) -> Result<(), QhError> {
         unsafe {
-            Qh::try_on_qh(self, |qh| {
+            Qh::try_on_qh_mut(self, |qh| {
                 println!("qh_check_points!!!");
                 sys::qh_check_points(qh)
             })
@@ -88,7 +88,7 @@ impl<'a> Qh<'a> {
     ///   checking for [`Facet::is_sentinel`].
     pub fn all_facets(&self) -> impl Iterator<Item = Facet> {
         let mut current = Facet::from_ptr(
-            unsafe { sys::qh_get_facet_list(&self.qh) },
+            unsafe { sys::qh_get_facet_list(self.qh.get() as *mut _) },
             self.dim,
         );
 
@@ -103,7 +103,7 @@ impl<'a> Qh<'a> {
     /// See [`Qh::all_facets`] for more information.
     pub fn all_facets_rev(&self) -> impl Iterator<Item = Facet> {
         let mut current = Facet::from_ptr(
-            unsafe { sys::qh_get_facet_tail(&self.qh) },
+            unsafe { sys::qh_get_facet_tail(self.qh.get() as *mut _) },
             self.dim,
         );
 
@@ -124,7 +124,7 @@ impl<'a> Qh<'a> {
 
     pub fn all_vertices(&self) -> impl Iterator<Item = Vertex> {
         let mut current = Vertex::from_ptr(
-            unsafe { sys::qh_get_vertex_list(&self.qh) },
+            unsafe { sys::qh_get_vertex_list(self.qh.get() as *mut _) },
             self.dim,
         );
 
@@ -136,7 +136,7 @@ impl<'a> Qh<'a> {
 
     pub fn all_vertices_rev(&self) -> impl Iterator<Item = Vertex> {
         let mut current = Vertex::from_ptr(
-            unsafe { sys::qh_get_vertex_tail(&self.qh) },
+            unsafe { sys::qh_get_vertex_tail(self.qh.get() as *mut _) },
             self.dim,
         );
 
@@ -165,7 +165,7 @@ impl<'a> Qh<'a> {
     /// assert_eq!(qh.num_facets(), qh.facets().count());
     /// ```
     pub fn num_facets(&self) -> usize {
-        unsafe { sys::qh_get_num_facets(&self.qh) as _ }
+        unsafe { sys::qh_get_num_facets(self.qh.get()) as _ }
     }
 
     /// Number of vertices in the hull (sentinel excluded)
@@ -183,7 +183,7 @@ impl<'a> Qh<'a> {
     /// assert_eq!(qh.num_vertices(), qh.vertices().count());
     /// ```
     pub fn num_vertices(&self) -> usize {
-        unsafe { sys::qh_get_num_vertices(&self.qh) as _ }
+        unsafe { sys::qh_get_num_vertices(self.qh.get()) as _ }
     }
 
     pub fn simplices(&self) -> impl Iterator<Item = Facet> {
@@ -209,7 +209,7 @@ impl<'a> Qh<'a> {
     /// #         [0.25, 0.25]
     /// #    ]).unwrap();
     /// unsafe {
-    ///     Qh::try_on_qh(&mut qh, |qh| {
+    ///     Qh::try_on_qh_mut(&mut qh, |qh| {
     ///         sys::qh_qhull(qh)
     ///     }).unwrap();
     /// }
@@ -226,28 +226,51 @@ impl<'a> Qh<'a> {
     /// #         [0.25, 0.25]
     /// #    ]).unwrap();
     /// unsafe {
-    ///     Qh::try_on_qh(&mut qh, |qh| {
+    ///     Qh::try_on_qh_mut(&mut qh, |qh| {
     ///         sys::qh_qhull(qh)
     ///     }).expect("qhull computation failed");
     ///
-    ///     Qh::try_on_qh(&mut qh, |qh| {
+    ///     Qh::try_on_qh_mut(&mut qh, |qh| {
     ///         sys::qh_check_output(qh)
     ///     }).expect("qhull output check failed");
     /// }
     /// ```
     ///
     pub unsafe fn try_on_qh<'b, R>(
-        qh: &'b mut Qh,
-        f: impl FnOnce(&mut sys::qhT) -> R,
+        qh: &'b Qh,
+        f: impl FnOnce(*const sys::qhT) -> R,
     ) -> Result<R, QhError<'b>> {
-        unsafe { QhError::try_on_raw(&mut qh.qh, &mut qh.buffers.err_file, f) }
+        unsafe { QhError::try_on_raw(qh.qh.get(), &mut qh.buffers.borrow_mut().err_file, |p| f(p)) }
+    }
+
+    pub unsafe fn try_on_qh_mut<'b, R>(
+        qh: &'b mut Qh,
+        f: impl FnOnce(*mut sys::qhT) -> R,
+    ) -> Result<R, QhError<'b>> {
+        unsafe { QhError::try_on_raw(qh.qh.get(), &mut qh.buffers.borrow_mut().err_file, f) }
+    }
+
+    /// Get the pointer to the raw qhT instance
+    ///
+    /// # Warning
+    /// Prefer using the [`Qh::try_on_qh`] when calling a fallible qhull function.
+    pub unsafe fn raw_ptr(qh: &Qh) -> *const sys::qhT {
+        qh.qh.get()
+    }
+
+    /// Get the mutable pointer to the raw qhT instance
+    ///
+    /// # Warning
+    /// Prefer using the [`Qh::try_on_qh_mut`] when calling a fallible qhull function.
+    pub unsafe fn raw_ptr_mut(qh: &mut Qh) -> *mut sys::qhT {
+        qh.qh.get_mut()
     }
 }
 
 impl<'a> Drop for Qh<'a> {
     fn drop(&mut self) {
         unsafe {
-            sys::qh_freeqhull(&mut self.qh, !sys::qh_ALL);
+            sys::qh_freeqhull(self.qh.get_mut(), !sys::qh_ALL);
         }
     }
 }

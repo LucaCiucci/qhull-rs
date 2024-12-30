@@ -5,7 +5,7 @@ use std::ops::Not;
 
 use crate::helpers::QhTypeRef;
 
-use crate::{sys, Facet};
+use crate::{sys, Facet, Qh};
 
 /// Represents a set of Qhull elements
 #[derive(Clone, Copy)]
@@ -38,6 +38,17 @@ impl<'a, T: QhTypeRef> Set<'a, T> {
     /// Iterate over the elements of the set
     pub fn iter(&self) -> impl Iterator<Item = T> + 'a {
         SetIterator::new(self)
+    }
+
+    pub fn maxsize(&self) -> i32 {
+        let set = unsafe { &*self.set };
+        set.maxsize
+    }
+
+    pub fn size(&self, qh: &Qh) -> usize {
+        unsafe {
+            sys::qh_setsize(Qh::raw_ptr(qh) as *mut _, self.set) as usize
+        }
     }
 }
 
