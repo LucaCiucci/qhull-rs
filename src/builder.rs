@@ -301,8 +301,8 @@ impl QhBuilder {
     /// let builder = unsafe {
     ///     QhBuilder::default()
     ///         .with_configure(|qh| {
-    ///             Qh::try_on_qh(qh, |qh| {
-    ///                 qh.DELAUNAY = true as _;
+    ///             Qh::try_on_qh_mut(qh, |qh| {
+    ///                 (*qh).DELAUNAY = true as _;
     ///             })
     ///         });
     /// };

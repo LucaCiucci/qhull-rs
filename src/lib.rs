@@ -209,7 +209,7 @@ impl<'a> Qh<'a> {
     /// #         [0.25, 0.25]
     /// #    ]).unwrap();
     /// unsafe {
-    ///     Qh::try_on_qh(&mut qh, |qh| {
+    ///     Qh::try_on_qh_mut(&mut qh, |qh| {
     ///         sys::qh_qhull(qh)
     ///     }).unwrap();
     /// }
@@ -226,11 +226,11 @@ impl<'a> Qh<'a> {
     /// #         [0.25, 0.25]
     /// #    ]).unwrap();
     /// unsafe {
-    ///     Qh::try_on_qh(&mut qh, |qh| {
+    ///     Qh::try_on_qh_mut(&mut qh, |qh| {
     ///         sys::qh_qhull(qh)
     ///     }).expect("qhull computation failed");
     ///
-    ///     Qh::try_on_qh(&mut qh, |qh| {
+    ///     Qh::try_on_qh_mut(&mut qh, |qh| {
     ///         sys::qh_check_output(qh)
     ///     }).expect("qhull output check failed");
     /// }
