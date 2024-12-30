@@ -1,6 +1,6 @@
 use std::{fmt::Debug, marker::PhantomData, ops::Not};
 
-use crate::{helpers::QhTypeRef, sys, Qh, Set};
+use crate::{helpers::QhTypeRef, sys, Qh, QhError, Set};
 
 /// A vertex of the convex hull
 ///
@@ -80,6 +80,18 @@ impl<'a> Vertex<'a> {
             let index = diff / point_size;
             debug_assert!(index < unsafe { sys::qh_get_num_points(qh.qh.get()) as usize });
             Some(index)
+        }
+    }
+
+    /// Get the id of the point that the vertex represents
+    ///
+    /// This method wraps the [`qhull_sys::qh_pointid`] function.
+    pub fn point_id<'b>(&self, qh: &'b Qh) -> Result<i32, QhError<'b>> {
+        unsafe {
+            let ptr = self.raw_ref().point;
+            Qh::try_on_qh(&qh, |qh| {
+                qhull_sys::qh_pointid(qh as *mut _, ptr as *mut _)
+            })
         }
     }
 
