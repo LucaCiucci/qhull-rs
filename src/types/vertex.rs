@@ -54,10 +54,10 @@ impl<'a> Vertex<'a> {
     ///
     /// Use [`Vertex::index_unchecked`] if you are sure that the vertex has coordinates
     pub fn index(&self, qh: &Qh) -> Option<usize> {
-        debug_assert_eq!(qh.dim, unsafe { sys::qh_get_hull_dim(&qh.qh) as usize });
+        debug_assert_eq!(qh.dim, unsafe { sys::qh_get_hull_dim(qh.qh.get()) as usize });
 
-        let first_ptr = unsafe { sys::qh_get_first_point(&qh.qh) as *const f64 };
-        let end_ptr = unsafe { first_ptr.add(sys::qh_get_num_points(&qh.qh) as usize * qh.dim) };
+        let first_ptr = unsafe { sys::qh_get_first_point(qh.qh.get()) as *const f64 };
+        let end_ptr = unsafe { first_ptr.add(sys::qh_get_num_points(qh.qh.get()) as usize * qh.dim) };
 
         // perform some additional checks if we own the coordinates
         if let Some(coords_holder) = qh.coords_holder.as_ref() {
@@ -78,7 +78,7 @@ impl<'a> Vertex<'a> {
             let point_size = std::mem::size_of::<f64>() * qh.dim;
             debug_assert_eq!(diff % point_size, 0);
             let index = diff / point_size;
-            debug_assert!(index < unsafe { sys::qh_get_num_points(&qh.qh) as usize });
+            debug_assert!(index < unsafe { sys::qh_get_num_points(qh.qh.get()) as usize });
             Some(index)
         }
     }
@@ -88,7 +88,7 @@ impl<'a> Vertex<'a> {
     /// Note that the this might return and invalid index or overflow if the vertex does not belong to the original set of points
     /// (e.g. is a sentinel or has no coordinates)
     pub fn index_unchecked(&self, qh: &Qh) -> usize {
-        let first_ptr = qh.qh.first_point as *const f64;
+        let first_ptr = unsafe { (*qh.qh.get()).first_point as *const f64 };
         let current_ptr = self.point().map(|s| s.as_ptr()).unwrap_or(std::ptr::null());
         let diff = current_ptr as usize - first_ptr as usize;
         let point_size = std::mem::size_of::<f64>() * qh.dim;

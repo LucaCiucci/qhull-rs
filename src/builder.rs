@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, ptr, rc::Rc};
+use std::{cell::{RefCell, UnsafeCell}, marker::PhantomData, ptr, rc::Rc};
 
 use crate::{
     helpers::{collect_coords, CollectedCoords},
@@ -185,10 +185,10 @@ impl QhBuilder {
             );
 
             let mut qh = Qh {
-                qh,
+                qh: UnsafeCell::new(qh),
                 coords_holder: None,
                 dim,
-                buffers,
+                buffers: RefCell::new(buffers),
                 owned_values: Default::default(),
                 phantom: PhantomData,
             };
@@ -197,7 +197,7 @@ impl QhBuilder {
                 config(&mut qh).map_err(|e| e.into_static())?;
             }
 
-            Qh::try_on_qh(&mut qh, |qh| {
+            Qh::try_on_qh_mut(&mut qh, |qh| {
                 sys::qh_init_B(
                     qh,
                     points.as_ptr() as *mut f64,
@@ -372,8 +372,8 @@ macro_rules! add_setting {
         pub $($unsafe)? fn $setter(mut self, $setter: type_mapping::$ty) -> Self {
             self = unsafe {
                 self.with_configure(move |qh| {
-                    Qh::try_on_qh(qh, |qh| {
-                        qh.$qhull_name = $setter as _;
+                    Qh::try_on_qh_mut(qh, |qh| {
+                        (*qh).$qhull_name = $setter as _;
                     })
                 })
             };
@@ -390,8 +390,8 @@ macro_rules! add_setting {
         pub unsafe fn $setter(mut self, $setter: [type_mapping::$ty; $N]) -> Self {
             self = unsafe {
                 self.with_configure(move |qh| {
-                    Qh::try_on_qh(qh, |qh| {
-                        qh.$qhull_name = $setter;
+                    Qh::try_on_qh_mut(qh, |qh| {
+                        (*qh).$qhull_name = $setter;
                     })
                 })
             };
@@ -411,8 +411,8 @@ macro_rules! add_setting {
                 self.with_configure(move |qh| {
                     let ptr = $setter.as_ptr();
                     qh.owned_values.$setter = Some($setter.clone());
-                    Qh::try_on_qh(qh, |qh| {
-                        qh.$qhull_name = ptr as *mut _;
+                    Qh::try_on_qh_mut(qh, |qh| {
+                        (*qh).$qhull_name = ptr as *mut _;
                     })
                 })
             };
@@ -434,8 +434,8 @@ macro_rules! add_setting {
                 self.with_configure(move |qh| {
                     let ptr = $setter.as_ptr();
                     qh.owned_values.$setter = Some($setter.clone());
-                    Qh::try_on_qh(qh, |qh| {
-                        qh.$qhull_name = ptr as *mut _;
+                    Qh::try_on_qh_mut(qh, |qh| {
+                        (*qh).$qhull_name = ptr as *mut _;
                     })
                 })
             };

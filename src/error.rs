@@ -171,12 +171,12 @@ impl<'a> QhError<'a> {
     /// - <https://learn.microsoft.com/en-en/cpp/cpp/using-setjmp-longjmp?view=msvc-170>
     /// - <http://groups.di.unipi.it/~nids/docs/longjump_try_trow_catch.html>
     pub unsafe fn try_on_raw<'b, R, F>(
-        qh: &mut sys::qhT,
+        qh: *mut sys::qhT,
         err_file: &mut Option<TmpFile>,
         f: F,
     ) -> Result<R, QhError<'b>>
     where
-        F: FnOnce(&mut sys::qhT) -> R,
+        F: FnOnce(*mut sys::qhT) -> R,
     {
         unsafe extern "C" fn cb<F2>(qh: *mut sys::qhT, data: *mut std::ffi::c_void)
         where
@@ -209,6 +209,8 @@ impl<'a> QhError<'a> {
                 &mut f as *mut _ as *mut std::ffi::c_void,
             )
         };
+
+        let qh = &mut *qh;
 
         if err_code == 0 {
             Ok(result.unwrap())
