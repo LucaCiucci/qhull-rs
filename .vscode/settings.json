@@ -68,6 +68,7 @@
         "outsideset",
         "Pcheckmax",
         "Pnearinside",
+        "pointid",
         "postmerge",
         "premerge",
         "PRINTEND",
