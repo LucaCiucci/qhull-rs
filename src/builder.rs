@@ -609,6 +609,6 @@ mod type_mapping {
     pub type int = i32;
     pub type pointT = f64;
     pub type coordT = f64;
-    pub type char = i8;
+    pub type char = core::ffi::c_char;
     pub type qh_PRINT = sys::qh_PRINT;
 }

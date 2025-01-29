@@ -15,7 +15,7 @@ include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 pub const QHULL_LICENSE_TEXT: &str = include_str!("../qhull/COPYING.txt");
 
-fn str_from_i32_array<'a>(data: &'a [i8]) -> Result<&'a CStr, FromBytesUntilNulError> {
+fn str_from_c_char_array<'a>(data: &'a [core::ffi::c_char]) -> Result<&'a CStr, FromBytesUntilNulError> {
     unsafe {
         CStr::from_bytes_until_nul(core::slice::from_raw_parts(
             data.as_ptr() as *const u8,
@@ -144,10 +144,10 @@ impl Debug for qhT {
             .field("POINTSmalloc", &self.POINTSmalloc)
             .field("input_points", &self.input_points)
             .field("input_malloc", &self.input_malloc)
-            .field("qhull_command", &str_from_i32_array(&self.qhull_command))
+            .field("qhull_command", &str_from_c_char_array(&self.qhull_command))
             .field("qhull_commandsiz2", &self.qhull_commandsiz2)
-            .field("rbox_command", &str_from_i32_array(&self.rbox_command))
-            .field("qhull_options", &str_from_i32_array(&self.qhull_options))
+            .field("rbox_command", &str_from_c_char_array(&self.rbox_command))
+            .field("qhull_options", &str_from_c_char_array(&self.qhull_options))
             .field("qhull_optionlen", &self.qhull_optionlen)
             .field("qhull_optionsiz", &self.qhull_optionsiz)
             .field("qhull_optionsiz2", &self.qhull_optionsiz2)

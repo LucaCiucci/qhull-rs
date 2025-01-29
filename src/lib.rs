@@ -286,6 +286,6 @@ struct OwnedValues {
     upper_bound: Option<Rc<Vec<f64>>>,
     lower_bound: Option<Rc<Vec<f64>>>,
     feasible_point: Option<Rc<Vec<f64>>>,
-    feasible_string: Option<Rc<Vec<i8>>>,
+    feasible_string: Option<Rc<Vec<core::ffi::c_char>>>,
     near_zero: Option<Rc<Vec<f64>>>,
 }
