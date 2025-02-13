@@ -34,6 +34,7 @@ include = [
 
 [dependencies]
 qhull-sys = { version = "0.3", path = "qhull-sys", features = [ "include-programs" ]}
+thiserror = "2.0.11"
 
 [dev-dependencies]
 rand = "0.8.5"
