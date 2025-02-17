@@ -656,3 +656,77 @@ mod type_mapping {
     pub type coordT = f64;
     pub type qh_PRINT = sys::qh_PRINT;
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::Qh;
+
+    #[test]
+    fn triangulate() {
+        // from https://github.com/LucaCiucci/qhull-rs/issues/15
+        let points = [
+            [10.0, -1000.0, 0.0],
+            [-838.3645082073471, -1000.0, 0.0],
+            [0.0, -1000.0, 0.5],
+            [0.0, -1000.0, -1.0],
+            [0.0, 0.0, 0.0],
+        ];
+
+        let qh = Qh::builder()
+            .compute(true)
+            .triangulate(false)
+            .build_from_iter(points.into_iter())
+            .expect("Failed to compute convex hull");
+
+        let faces = qh
+            .facets()
+            .map(|face| face
+                .vertices()
+                .unwrap()
+                .iter()
+                .map(|v| v.point_id(&qh).unwrap())
+                .collect::<Vec<_>>()
+            )
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            faces,
+            vec![
+                vec![3, 4, 1],
+                vec![3, 4, 0],
+                vec![2, 4, 1],
+                vec![2, 4, 0],
+                vec![2, 3, 0, 1],
+            ]
+        );
+
+        let qh = Qh::builder()
+            .compute(true)
+            .triangulate(true)
+            .build_from_iter(points.into_iter())
+            .expect("Failed to compute convex hull");
+
+        let faces = qh
+            .facets()
+            .map(|face| face
+                .vertices()
+                .unwrap()
+                .iter()
+                .map(|v| v.point_id(&qh).unwrap())
+                .collect::<Vec<_>>()
+            )
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            faces,
+            vec![
+                vec![3, 4, 1],
+                vec![3, 4, 0],
+                vec![2, 4, 1],
+                vec![2, 4, 0],
+                vec![2, 3, 0],
+                vec![2, 3, 1],
+            ]
+        );
+    }
+}
