@@ -43,6 +43,10 @@ impl<'a> Qh<'a> {
         unsafe { Qh::try_on_qh_mut(self, |qh| sys::qh_qhull(qh)) }
     }
 
+    pub fn prepare_output(&mut self) -> Result<(), QhError> {
+        unsafe { Qh::try_on_qh_mut(self, |qh| sys::qh_prepare_output(qh)) }
+    }
+
     /// Check the output of the qhull instance
     pub fn check_output(&mut self) -> Result<(), QhError> {
         unsafe { Qh::try_on_qh_mut(self, |qh| sys::qh_check_output(qh)) }

@@ -229,6 +229,7 @@ impl QhBuilder {
                 if self.check_points {
                     qh.check_points().map_err(|e| e.into_static())?;
                 }
+                qh.prepare_output().map_err(|e| e.into_static())?;
             }
 
             Ok(qh)
@@ -418,7 +419,7 @@ macro_rules! add_setting {
         #[doc = add_setting!(basic documentation: $setter => $qhull_name: $($orig_doc)?)]
         $(#[$meta])*
         #[doc = add_setting!(safety documentation: unsafe)]
-        pub unsafe fn $setter(mut self, $setter: &str) -> Result<Self, InvalidStringError> { // or maybe QhError or something else?
+        pub fn $setter(mut self, $setter: &str) -> Result<Self, InvalidStringError> { // or maybe QhError or something else?
             let bytes = std::ffi::CString::new($setter)?
                 .as_bytes_with_nul()
                 .iter()
@@ -449,7 +450,7 @@ macro_rules! add_setting {
         #[doc = add_setting!(basic documentation: $setter => $qhull_name: $($orig_doc)?)]
         $(#[$meta])*
         #[doc = add_setting!(safety documentation: unsafe)]
-        pub unsafe fn $setter(mut self, $setter: &str) -> Result<Self, InvalidStringError> { // or maybe QhError or something else?
+        pub fn $setter(mut self, $setter: &str) -> Result<Self, InvalidStringError> { // or maybe QhError or something else?
             let $setter = std::ffi::CString::new($setter)?;
             self = unsafe {
                 self.with_configure(move |qh| {
