@@ -100,7 +100,7 @@ impl QhBuilder {
 
     /// Set whether to compute the hull when building the Qhull instance
     ///
-    /// When enabled, [`Qh::compute`] will be called.
+    /// When enabled, [`Qh::compute`] and [`Qh::prepare_output`] will be called.
     /// When disabled, you will have to call this method manually.
     ///
     /// # Example
@@ -226,6 +226,7 @@ impl QhBuilder {
                 if self.check_output {
                     qh.check_output().map_err(|e| e.into_static())?;
                 }
+                qh.prepare_output().map_err(|e| e.into_static())?;
                 if self.check_points {
                     qh.check_points().map_err(|e| e.into_static())?;
                 }
@@ -418,7 +419,7 @@ macro_rules! add_setting {
         #[doc = add_setting!(basic documentation: $setter => $qhull_name: $($orig_doc)?)]
         $(#[$meta])*
         #[doc = add_setting!(safety documentation: unsafe)]
-        pub unsafe fn $setter(mut self, $setter: &str) -> Result<Self, InvalidStringError> { // or maybe QhError or something else?
+        pub fn $setter(mut self, $setter: &str) -> Result<Self, InvalidStringError> { // or maybe QhError or something else?
             let bytes = std::ffi::CString::new($setter)?
                 .as_bytes_with_nul()
                 .iter()
@@ -449,7 +450,7 @@ macro_rules! add_setting {
         #[doc = add_setting!(basic documentation: $setter => $qhull_name: $($orig_doc)?)]
         $(#[$meta])*
         #[doc = add_setting!(safety documentation: unsafe)]
-        pub unsafe fn $setter(mut self, $setter: &str) -> Result<Self, InvalidStringError> { // or maybe QhError or something else?
+        pub fn $setter(mut self, $setter: &str) -> Result<Self, InvalidStringError> { // or maybe QhError or something else?
             let $setter = std::ffi::CString::new($setter)?;
             self = unsafe {
                 self.with_configure(move |qh| {
@@ -654,4 +655,78 @@ mod type_mapping {
     pub type pointT = f64;
     pub type coordT = f64;
     pub type qh_PRINT = sys::qh_PRINT;
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Qh;
+
+    #[test]
+    fn triangulate() {
+        // from https://github.com/LucaCiucci/qhull-rs/issues/15
+        let points = [
+            [10.0, -1000.0, 0.0],
+            [-838.3645082073471, -1000.0, 0.0],
+            [0.0, -1000.0, 0.5],
+            [0.0, -1000.0, -1.0],
+            [0.0, 0.0, 0.0],
+        ];
+
+        let qh = Qh::builder()
+            .compute(true)
+            .triangulate(false)
+            .build_from_iter(points.into_iter())
+            .expect("Failed to compute convex hull");
+
+        let faces = qh
+            .facets()
+            .map(|face| face
+                .vertices()
+                .unwrap()
+                .iter()
+                .map(|v| v.point_id(&qh).unwrap())
+                .collect::<Vec<_>>()
+            )
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            faces,
+            vec![
+                vec![3, 4, 1],
+                vec![3, 4, 0],
+                vec![2, 4, 1],
+                vec![2, 4, 0],
+                vec![2, 3, 0, 1],
+            ]
+        );
+
+        let qh = Qh::builder()
+            .compute(true)
+            .triangulate(true)
+            .build_from_iter(points.into_iter())
+            .expect("Failed to compute convex hull");
+
+        let faces = qh
+            .facets()
+            .map(|face| face
+                .vertices()
+                .unwrap()
+                .iter()
+                .map(|v| v.point_id(&qh).unwrap())
+                .collect::<Vec<_>>()
+            )
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            faces,
+            vec![
+                vec![3, 4, 1],
+                vec![3, 4, 0],
+                vec![2, 4, 1],
+                vec![2, 4, 0],
+                vec![2, 3, 0],
+                vec![2, 3, 1],
+            ]
+        );
+    }
 }
