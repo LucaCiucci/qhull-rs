@@ -39,15 +39,22 @@ impl<'a> Qh<'a> {
     }
 
     /// Compute the convex hull
+    ///
+    /// Wraps [`qhull_sys::qh_qhull`],
     pub fn compute(&mut self) -> Result<(), QhError> {
         unsafe { Qh::try_on_qh_mut(self, |qh| sys::qh_qhull(qh)) }
     }
 
+    /// Prepare the output of the qhull instance
+    ///
+    /// Wraps [`qhull_sys::qh_prepare_output`],
     pub fn prepare_output(&mut self) -> Result<(), QhError> {
         unsafe { Qh::try_on_qh_mut(self, |qh| sys::qh_prepare_output(qh)) }
     }
 
     /// Check the output of the qhull instance
+    ///
+    /// Wraps [`qhull_sys::qh_check_output`],
     pub fn check_output(&mut self) -> Result<(), QhError> {
         unsafe { Qh::try_on_qh_mut(self, |qh| sys::qh_check_output(qh)) }
     }

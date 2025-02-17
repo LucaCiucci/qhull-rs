@@ -100,7 +100,7 @@ impl QhBuilder {
 
     /// Set whether to compute the hull when building the Qhull instance
     ///
-    /// When enabled, [`Qh::compute`] will be called.
+    /// When enabled, [`Qh::compute`] and [`Qh::prepare_output`] will be called.
     /// When disabled, you will have to call this method manually.
     ///
     /// # Example
@@ -226,10 +226,10 @@ impl QhBuilder {
                 if self.check_output {
                     qh.check_output().map_err(|e| e.into_static())?;
                 }
+                qh.prepare_output().map_err(|e| e.into_static())?;
                 if self.check_points {
                     qh.check_points().map_err(|e| e.into_static())?;
                 }
-                qh.prepare_output().map_err(|e| e.into_static())?;
             }
 
             Ok(qh)
