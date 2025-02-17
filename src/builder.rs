@@ -1,4 +1,4 @@
-use std::{cell::{RefCell, UnsafeCell}, marker::PhantomData, ptr, rc::Rc};
+use std::{cell::{RefCell, UnsafeCell}, marker::PhantomData, ptr};
 
 use crate::{
     helpers::{collect_coords, CollectedCoords},
@@ -7,6 +7,19 @@ use crate::{
 };
 
 type QhConfigurator = Box<dyn for<'b> Fn(&'b mut Qh) -> Result<(), QhError<'b>> + 'static>;
+
+#[derive(Debug)]
+#[derive(thiserror::Error)]
+pub enum InvalidStringError {
+    #[error(transparent)]
+    NulError(#[from] std::ffi::NulError),
+    #[error("string is too long ({actual_length}), max length is {max_length} for {field}")]
+    TooLong {
+        field: &'static str,
+        max_length: usize,
+        actual_length: usize,
+    },
+}
 
 /// Builder for a Qhull instance
 ///
@@ -400,13 +413,44 @@ macro_rules! add_setting {
     };
     (
         $(#[$meta:meta])*
-        dyn_array $($unsafe:ident)? ($ty:ident*) $setter:ident => $qhull_name:ident $($orig_doc:literal)?
+        array_string $($unsafe:ident)? (char[$N:expr]) $setter:ident => $qhull_name:ident $($orig_doc:literal)?
     ) => {
         #[doc = add_setting!(basic documentation: $setter => $qhull_name: $($orig_doc)?)]
         $(#[$meta])*
         #[doc = add_setting!(safety documentation: unsafe)]
-        pub unsafe fn $setter(mut self, $setter: impl IntoIterator<Item = type_mapping::$ty>) -> Self {
-            let $setter = Rc::new($setter.into_iter().collect::<Vec<_>>());
+        pub unsafe fn $setter(mut self, $setter: &str) -> Result<Self, InvalidStringError> { // or maybe QhError or something else?
+            let bytes = std::ffi::CString::new($setter)?
+                .as_bytes_with_nul()
+                .iter()
+                .map(|&b| b as core::ffi::c_char)
+                .collect::<Vec<_>>();
+            if bytes.len() > $N {
+                return Err(InvalidStringError::TooLong {
+                    field: stringify!($setter),
+                    max_length: $N,
+                    actual_length: bytes.len(),
+                });
+            }
+            self = unsafe {
+                self.with_configure(move |qh| {
+                    Qh::try_on_qh_mut(qh, |qh| {
+                        (*qh).$qhull_name = [0; $N];
+                        (*qh).$qhull_name[..bytes.len()].copy_from_slice(&bytes[..]);
+                    })
+                })
+            };
+            Ok(self)
+        }
+    };
+    (
+        $(#[$meta:meta])*
+        dyn_string $($unsafe:ident)? (char*) $setter:ident => $qhull_name:ident $($orig_doc:literal)?
+    ) => {
+        #[doc = add_setting!(basic documentation: $setter => $qhull_name: $($orig_doc)?)]
+        $(#[$meta])*
+        #[doc = add_setting!(safety documentation: unsafe)]
+        pub unsafe fn $setter(mut self, $setter: &str) -> Result<Self, InvalidStringError> { // or maybe QhError or something else?
+            let $setter = std::ffi::CString::new($setter)?;
             self = unsafe {
                 self.with_configure(move |qh| {
                     let ptr = $setter.as_ptr();
@@ -416,7 +460,7 @@ macro_rules! add_setting {
                     })
                 })
             };
-            self
+            Ok(self)
         }
     };
     (
@@ -428,7 +472,7 @@ macro_rules! add_setting {
         #[doc = add_setting!(safety documentation: $($unsafe)?)]
         pub $($unsafe)? fn $setter(mut self, $setter: impl IntoIterator<Item = type_mapping::$ty>) -> Self {
             let dim = self.dim.expect(concat!("dimension hint is required for ", stringify!($setter), " setter"));
-            let $setter = Rc::new($setter.into_iter().collect::<Vec<_>>());
+            let $setter = $setter.into_iter().collect::<Vec<_>>();
             assert_eq!($setter.len() % dim, 0, concat!("number of elements in ", stringify!($setter), " must be divisible by dim"));
             self = unsafe {
                 self.with_configure(move |qh| {
@@ -552,7 +596,7 @@ add_setting!(
   /*--------input constants ---------*/
     scalar(realT) area_factor => AREAfactor "1/(hull_dim-1)! for converting det's to area",
     scalar(boolT) do_check_max => DOcheckmax "true if calling qh_check_maxout (!qh.SKIPcheckmax && qh.MERGING)",
-    dyn_array(char*) feasible_string => feasible_string "feasible point 'Hn,n,n' for halfspace intersection",
+    dyn_string(char*) feasible_string => feasible_string "feasible point 'Hn,n,n' for halfspace intersection",
     point(coordT*) feasible_point => feasible_point "   as coordinates, both malloc'd",
     scalar(boolT) get_area => GETarea "true 'Fa', 'FA', 'FS', 'PAn', 'PFn' if compute facet area/Voronoi volume in io_r.c",
     scalar(boolT) keep_near_inside => KEEPnearinside "true if near-inside points in coplanarset",
@@ -563,10 +607,10 @@ add_setting!(
     scalar(boolT) points_malloc => POINTSmalloc "  true if qh.first_point/num_points allocated",
     // TODO ???(pointT*) input_points => input_points "copy of original qh.first_point for input points for qh_joggleinput",
     scalar(boolT) input_malloc => input_malloc "true if qh.input_points malloc'd",
-    array(char[256])  qhull_command => qhull_command "command line that invoked this program",
+    array_string(char[256])  qhull_command => qhull_command "command line that invoked this program",
     scalar(int)   qhull_command_size_2 => qhull_commandsiz2 "size of qhull_command at qh_clear_outputflags",
-    array(char[256]) rbox_command => rbox_command "command line that produced the input points",
-    array(char[512]) qhull_options => qhull_options "descriptive list of options",
+    array_string(char[256]) rbox_command => rbox_command "command line that produced the input points",
+    array_string(char[512]) qhull_options => qhull_options "descriptive list of options",
     scalar(int)  qhull_option_len => qhull_optionlen "length of last line",
     scalar(int)  qhull_option_size => qhull_optionsiz "size of qhull_options at qh_build_withrestart",
     scalar(int)  qhull_option_size_2 => qhull_optionsiz2 "size of qhull_options at qh_clear_outputflags",
@@ -609,6 +653,5 @@ mod type_mapping {
     pub type int = i32;
     pub type pointT = f64;
     pub type coordT = f64;
-    pub type char = core::ffi::c_char;
     pub type qh_PRINT = sys::qh_PRINT;
 }

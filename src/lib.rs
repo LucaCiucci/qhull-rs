@@ -1,6 +1,6 @@
 #![doc = include_str!("../README.md")]
 
-use std::{cell::{RefCell, UnsafeCell}, marker::PhantomData, rc::Rc};
+use std::{cell::{RefCell, UnsafeCell}, ffi::CString, marker::PhantomData};
 
 use helpers::{prepare_delaunay_points, CollectedCoords, QhTypeRef};
 use io_buffers::IOBuffers;
@@ -278,14 +278,14 @@ impl<'a> Drop for Qh<'a> {
 #[derive(Default)]
 #[allow(unused)]
 struct OwnedValues {
-    good_point_coords: Option<Rc<Vec<f64>>>,
-    good_vertex_coords: Option<Rc<Vec<f64>>>,
-    first_point: Option<Rc<Vec<f64>>>,
-    upper_threshold: Option<Rc<Vec<f64>>>,
-    lower_threshold: Option<Rc<Vec<f64>>>,
-    upper_bound: Option<Rc<Vec<f64>>>,
-    lower_bound: Option<Rc<Vec<f64>>>,
-    feasible_point: Option<Rc<Vec<f64>>>,
-    feasible_string: Option<Rc<Vec<core::ffi::c_char>>>,
-    near_zero: Option<Rc<Vec<f64>>>,
+    good_point_coords: Option<Vec<f64>>,
+    good_vertex_coords: Option<Vec<f64>>,
+    first_point: Option<Vec<f64>>,
+    upper_threshold: Option<Vec<f64>>,
+    lower_threshold: Option<Vec<f64>>,
+    upper_bound: Option<Vec<f64>>,
+    lower_bound: Option<Vec<f64>>,
+    feasible_point: Option<Vec<f64>>,
+    feasible_string: Option<CString>,
+    near_zero: Option<Vec<f64>>,
 }
