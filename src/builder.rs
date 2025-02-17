@@ -1,4 +1,4 @@
-use std::{cell::{RefCell, UnsafeCell}, marker::PhantomData, ptr};
+use std::{cell::{RefCell, UnsafeCell}, ffi::{CStr, CString}, marker::PhantomData, ptr};
 
 use crate::{
     helpers::{collect_coords, CollectedCoords},
@@ -47,6 +47,7 @@ pub struct QhBuilder {
     compute: bool,
     check_output: bool,
     check_points: bool,
+    args: Vec<CString>,
     configs: Vec<QhConfigurator>,
 }
 
@@ -64,12 +65,26 @@ impl Default for QhBuilder {
             compute: true,
             check_output: false,
             check_points: false,
+            args: vec![c"qhull".to_owned()],
             configs: Vec::new(),
         }
     }
 }
 
 impl QhBuilder {
+    /// Add arguments for the qhull library
+    ///
+    /// These arguments are used by [`qhull_sys::qh_init_A`] before setting any other option.
+    pub fn qhull_args<S: AsRef<str>>(mut self, args: impl IntoIterator<Item = S>) -> Result<Self, InvalidStringError> {
+        self.args.extend(
+            args
+                .into_iter()
+                .map(|arg| CString::new(arg.as_ref()))
+                .collect::<Result<Vec<_>, _>>()?
+        );
+        Ok(self)
+    }
+
     /// Sets a dimension hint for the data
     ///
     /// This is useful when you want to **assert** that the data
@@ -186,6 +201,16 @@ impl QhBuilder {
             let mut qh: sys::qhT = std::mem::zeroed();
             let buffers = IOBuffers::new(self.capture_stdout, self.capture_stderr);
 
+            let argv = self
+                .args
+                .iter()
+                .map(|arg| arg.as_ptr())
+                .chain(std::iter::once(ptr::null()))
+                .collect::<Vec<_>>();
+            println!("{:?}", argv);
+            let argc = argv.len() as i32 - 1;
+            let argv = argv.as_ptr() as *mut _;
+
             // Note: this function cannot be called
             // inside of a try
             sys::qh_init_A(
@@ -193,8 +218,8 @@ impl QhBuilder {
                 buffers.in_file(),
                 buffers.out_file(),
                 buffers.err_file(),
-                0,
-                ptr::null_mut(),
+                argc,
+                argv,
             );
 
             let mut qh = Qh {
@@ -205,6 +230,21 @@ impl QhBuilder {
                 owned_values: Default::default(),
                 phantom: PhantomData,
             };
+
+            // from `qconvex_r.c`
+            const HIDDEN_OPTIONS: &CStr = c" d v H Qbb Qf Qg Qm Qr Qu Qv Qx Qz TR E V Fp Gt Q0 Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8 Q9 Q10 Q11 Q15 ";
+
+            Qh::try_on_qh_mut(&mut qh, |qh| {
+                sys::qh_checkflags(
+                    qh,
+                    (*qh).qhull_command.as_ptr() as *mut _,
+                    HIDDEN_OPTIONS.as_ptr() as *mut _,
+                );
+                sys::qh_initflags(
+                    qh,
+                    (*qh).qhull_command.as_ptr() as *mut _,
+                );
+            }).map_err(|e| e.into_static())?;
 
             for config in self.configs {
                 config(&mut qh).map_err(|e| e.into_static())?;
@@ -218,8 +258,7 @@ impl QhBuilder {
                     dim as _,
                     false as _,
                 );
-            })
-            .map_err(|e| e.into_static())?;
+            }).map_err(|e| e.into_static())?;
 
             if self.compute {
                 qh.compute().map_err(|e| e.into_static())?;
@@ -661,21 +700,21 @@ mod type_mapping {
 mod tests {
     use crate::Qh;
 
+    // from https://github.com/LucaCiucci/qhull-rs/issues/15
+    const POINTS_WITH_COPLANAR_SUBSET: &[[f64; 3]] = &[
+        [10.0, -1000.0, 0.0],
+        [-838.3645082073471, -1000.0, 0.0],
+        [0.0, -1000.0, 0.5],
+        [0.0, -1000.0, -1.0],
+        [0.0, 0.0, 0.0],
+    ];
+
     #[test]
     fn triangulate() {
-        // from https://github.com/LucaCiucci/qhull-rs/issues/15
-        let points = [
-            [10.0, -1000.0, 0.0],
-            [-838.3645082073471, -1000.0, 0.0],
-            [0.0, -1000.0, 0.5],
-            [0.0, -1000.0, -1.0],
-            [0.0, 0.0, 0.0],
-        ];
-
         let qh = Qh::builder()
             .compute(true)
             .triangulate(false)
-            .build_from_iter(points.into_iter())
+            .build_from_iter(POINTS_WITH_COPLANAR_SUBSET.iter().cloned())
             .expect("Failed to compute convex hull");
 
         let faces = qh
@@ -703,7 +742,66 @@ mod tests {
         let qh = Qh::builder()
             .compute(true)
             .triangulate(true)
-            .build_from_iter(points.into_iter())
+            .build_from_iter(POINTS_WITH_COPLANAR_SUBSET.iter().cloned())
+            .expect("Failed to compute convex hull");
+
+        let faces = qh
+            .facets()
+            .map(|face| face
+                .vertices()
+                .unwrap()
+                .iter()
+                .map(|v| v.point_id(&qh).unwrap())
+                .collect::<Vec<_>>()
+            )
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            faces,
+            vec![
+                vec![3, 4, 1],
+                vec![3, 4, 0],
+                vec![2, 4, 1],
+                vec![2, 4, 0],
+                vec![2, 3, 0],
+                vec![2, 3, 1],
+            ]
+        );
+    }
+
+    #[test]
+    fn triangulate_with_args() {
+        let qh = Qh::builder()
+            .compute(true)
+            .build_from_iter(POINTS_WITH_COPLANAR_SUBSET.iter().cloned())
+            .expect("Failed to compute convex hull");
+
+        let faces = qh
+            .facets()
+            .map(|face| face
+                .vertices()
+                .unwrap()
+                .iter()
+                .map(|v| v.point_id(&qh).unwrap())
+                .collect::<Vec<_>>()
+            )
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            faces,
+            vec![
+                vec![3, 4, 1],
+                vec![3, 4, 0],
+                vec![2, 4, 1],
+                vec![2, 4, 0],
+                vec![2, 3, 0, 1],
+            ]
+        );
+
+        let qh = Qh::builder()
+            .compute(true)
+            .qhull_args(&["Qt"]).unwrap()
+            .build_from_iter(POINTS_WITH_COPLANAR_SUBSET.iter().cloned())
             .expect("Failed to compute convex hull");
 
         let faces = qh
