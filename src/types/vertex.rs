@@ -89,9 +89,13 @@ impl<'a> Vertex<'a> {
     pub fn point_id<'b>(&self, qh: &'b Qh) -> Result<i32, QhError<'b>> {
         unsafe {
             let ptr = self.raw_ref().point;
-            Qh::try_on_qh(&qh, |qh| {
-                qhull_sys::qh_pointid(qh as *mut _, ptr as *mut _)
-            })
+            let qh_ptr = Qh::raw_ptr(qh);
+            QhError::try_2(
+                qh_ptr,
+                &mut qh.buffers().borrow_mut().err_file,
+                qhull_sys::qh_pointid,
+                (qh.qh.get(), ptr as *mut _),
+            )
         }
     }
 

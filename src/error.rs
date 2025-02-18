@@ -1,4 +1,4 @@
-use std::{error::Error, fmt::Display};
+use std::{error::Error, fmt::Display, os::raw::c_void};
 
 use crate::{helpers::QhTypeRef, sys, tmp_file::TmpFile, Facet, Ridge, Vertex};
 
@@ -153,67 +153,25 @@ impl<'a> QhError<'a> {
         }
     }
 
-    /// Try to run a function on a raw qhT instance and handle errors.
-    ///
-    /// # Safety
-    /// * shall not be nested
-    /// * shall not be called when errors are already being handled
-    ///
-    /// # Implementation details
-    ///
-    /// Qhull uses [`setjmp`/`longjmp`](https://en.cppreference.com/w/c/program/longjmp) for error handling, this is not currently supported in Rust.
-    /// For this reason, the actual error handling is done in C and this function is just a wrapper around the C function [`qhull_sys__try_on_qh`](sys::qhull_sys__try_on_qh).
-    ///
-    /// Relevant links:
-    /// - <https://github.com/rust-lang/rfcs/issues/2625>: RFC for adding support for `setjmp`/`longjmp` to Rust, describes the current problems with `setjmp`/`longjmp` in Rust.
-    /// - <https://docs.rs/setjmp/0.1.4/setjmp/index.html>
-    /// - <https://en.cppreference.com/w/c/program/longjmp>
-    /// - <https://learn.microsoft.com/en-en/cpp/cpp/using-setjmp-longjmp?view=msvc-170>
-    /// - <http://groups.di.unipi.it/~nids/docs/longjump_try_trow_catch.html>
-    pub unsafe fn try_on_raw<'b, R, F>(
+    unsafe fn try_impl<'b>(
         qh: *mut sys::qhT,
         err_file: &mut Option<TmpFile>,
-        f: F,
-    ) -> Result<R, QhError<'b>>
-    where
-        F: FnOnce(*mut sys::qhT) -> R,
-    {
-        unsafe extern "C" fn cb<F2>(qh: *mut sys::qhT, data: *mut std::ffi::c_void)
-        where
-            F2: FnOnce(&mut sys::qhT),
-        {
-            assert!(!qh.is_null(), "qh is null");
-            assert!(!data.is_null(), "data is null");
-            let qh = &mut *qh;
-            let f: &mut Option<F2> = &mut *(data as *mut _);
-            f.take().unwrap()(qh);
-        }
-
-        fn get_cb<F>(
-            _: &mut Option<F>,
-        ) -> unsafe extern "C" fn(*mut sys::qhT, *mut std::ffi::c_void)
-        where
-            F: FnOnce(&mut sys::qhT),
-        {
-            cb::<F>
-        }
-
-        let mut result = None;
-
-        let mut f = Some(|qh: &mut sys::qhT| result = Some(f(qh)));
+        f: unsafe extern "C" fn(*mut c_void),
+        data: *mut c_void,
+    ) -> Result<(), QhError<'b>> {
 
         let err_code = unsafe {
             sys::qhull_sys__try_on_qh(
                 &mut *qh,
-                Some(get_cb(&mut f)),
-                &mut f as *mut _ as *mut std::ffi::c_void,
+                Some(f),
+                data,
             )
         };
 
         let qh = &mut *qh;
 
         if err_code == 0 {
-            Ok(result.unwrap())
+            Ok(())
         } else {
             let kind = QhErrorKind::from_code(err_code);
             let file = err_file
@@ -230,3 +188,72 @@ impl<'a> QhError<'a> {
         }
     }
 }
+
+
+
+struct CCBData<F, Args, R> {
+    pub f: F,
+    pub args: Args,
+    pub result: Option<R>,
+}
+
+macro_rules! impl_try {
+    (
+        $name:ident($($arg:ident: $Arg:ident),*)
+    ) => {
+        /// Try to run a function on a raw qhT instance and handle errors.
+        ///
+        /// # Safety
+        /// * shall not be nested
+        /// * shall not be called when errors are already being handled
+        ///
+        /// # Implementation details
+        ///
+        /// Qhull uses [`setjmp`/`longjmp`](https://en.cppreference.com/w/c/program/longjmp) for error handling, this is not currently supported in Rust.
+        /// For this reason, the actual error handling is done in C and this function is just a wrapper around the C function [`qhull_sys__try_on_qh`](sys::qhull_sys__try_on_qh).
+        ///
+        /// Relevant links:
+        /// - <https://github.com/rust-lang/rfcs/issues/2625>: RFC for adding support for `setjmp`/`longjmp` to Rust, describes the current problems with `setjmp`/`longjmp` in Rust.
+        /// - <https://docs.rs/setjmp/0.1.4/setjmp/index.html>
+        /// - <https://en.cppreference.com/w/c/program/longjmp>
+        /// - <https://learn.microsoft.com/en-en/cpp/cpp/using-setjmp-longjmp?view=msvc-170>
+        /// - <http://groups.di.unipi.it/~nids/docs/longjump_try_trow_catch.html>
+        impl<'a> QhError<'a> {
+            pub unsafe fn $name<'b, R, $($Arg: Copy),*>(
+                qh: *mut sys::qhT,
+                err_file: &mut Option<TmpFile>,
+                f: unsafe extern "C" fn($($Arg,)*) -> R,
+                ($($arg,)*): ($($Arg,)*),
+            ) -> Result<R, QhError<'b>> {
+                let mut data = CCBData {
+                    f,
+                    args: ($($arg,)*),
+                    result: None,
+                };
+        
+                unsafe extern "C" fn cb<R, $($Arg: Copy),*>(data: *mut c_void) {
+                    let CCBData {
+                        f,
+                        args: ($($arg,)*),
+                        result,
+                    } = &mut *(data as *mut CCBData<unsafe extern "C" fn($($Arg,)*) -> R, ($($Arg,)*), R>);
+                    let r = f($(*$arg,)*);
+                    *result = Some(r);
+                }
+        
+                Self::try_impl(
+                    qh,
+                    err_file,
+                    cb::<R, $($Arg,)*>,
+                    &mut data as *mut _ as *mut c_void,
+                ).map(|_| data.result.expect("Result not set"))
+            }
+        }
+    };
+}
+
+impl_try!(try_1(a: A));
+impl_try!(try_2(a: A, b: B));
+impl_try!(try_3(a: A, b: B, c: C));
+impl_try!(try_4(a: A, b: B, c: C, d: D));
+impl_try!(try_5(a: A, b: B, c: C, d: D, e: E));

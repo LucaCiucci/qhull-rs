@@ -7,7 +7,7 @@
 
 int qhull_sys__try_on_qh(
     qhT* qh,
-    void (*fn)(qhT* qh, void* data),
+    void (*fn)(void* data),
     void* data
 );
 
