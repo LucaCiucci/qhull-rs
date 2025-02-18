@@ -181,9 +181,9 @@ impl<'a> QhError<'a> {
             Err(QhError {
                 kind,
                 error_message: msg,
-                face: Facet::from_ptr(qh.tracefacet, qh.input_dim as _), // TODO is this dim correct?
-                ridge: Ridge::from_ptr(qh.traceridge, qh.input_dim as _), // TODO is this dim correct?
-                vertex: Vertex::from_ptr(qh.tracevertex, qh.input_dim as _), // TODO is this dim correct?
+                face: Facet::from_ptr(qh.tracefacet, qh.input_dim as _),
+                ridge: Ridge::from_ptr(qh.traceridge, qh.input_dim as _),
+                vertex: Vertex::from_ptr(qh.tracevertex, qh.input_dim as _),
             })
         }
     }

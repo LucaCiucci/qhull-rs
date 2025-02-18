@@ -21,7 +21,7 @@ impl<'a> Debug for Facet<'a> {
             .field("max_outside", &self.max_outside())
             .field("offset", &self.offset())
             .field("normal", &self.normal())
-            .field("f", &"...")// TODO ???
+            .field("f", &"union { ... }")
             .field("center", &self.center())
             .field("previous", &self.previous().map(|f| f.id()))
             .field("next", &self.next().map(|f| f.id()))
