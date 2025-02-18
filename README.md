@@ -40,7 +40,7 @@ qhull
 Add this to your `Cargo.toml`:
 
 ```toml
-qhull = "0.3"
+qhull = "0.4"
 ```
 
 For the current development version:
