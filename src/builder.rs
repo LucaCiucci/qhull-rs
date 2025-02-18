@@ -234,31 +234,44 @@ impl QhBuilder {
             // from `qconvex_r.c`
             const HIDDEN_OPTIONS: &CStr = c" d v H Qbb Qf Qg Qm Qr Qu Qv Qx Qz TR E V Fp Gt Q0 Q1 Q2 Q3 Q4 Q5 Q6 Q7 Q8 Q9 Q10 Q11 Q15 ";
 
-            Qh::try_on_qh_mut(&mut qh, |qh| {
-                sys::qh_checkflags(
-                    qh,
-                    (*qh).qhull_command.as_ptr() as *mut _,
+            let qh_ptr = qh.qh.get();
+
+            QhError::try_3(
+                qh_ptr,
+                &mut qh.buffers.borrow_mut().err_file,
+                sys::qh_checkflags,
+                (
+                    qh_ptr,
+                    (*qh_ptr).qhull_command.as_ptr() as *mut _,
                     HIDDEN_OPTIONS.as_ptr() as *mut _,
-                );
-                sys::qh_initflags(
-                    qh,
-                    (*qh).qhull_command.as_ptr() as *mut _,
-                );
-            }).map_err(|e| e.into_static())?;
+                ),
+            ).map_err(|e| e.into_static())?;
+            QhError::try_2(
+                qh_ptr,
+                &mut qh.buffers.borrow_mut().err_file,
+                sys::qh_initflags,
+                (
+                    qh_ptr,
+                    (*qh_ptr).qhull_command.as_ptr() as *mut _,
+                ),
+            ).map_err(|e| e.into_static())?;
 
             for config in self.configs {
                 config(&mut qh).map_err(|e| e.into_static())?;
             }
 
-            Qh::try_on_qh_mut(&mut qh, |qh| {
-                sys::qh_init_B(
-                    qh,
+            QhError::try_5(
+                qh_ptr,
+                &mut qh.buffers.borrow_mut().err_file,
+                sys::qh_init_B,
+                (
+                    qh_ptr,
                     points.as_ptr() as *mut f64,
                     num_points as _,
                     dim as _,
                     false as _,
-                );
-            }).map_err(|e| e.into_static())?;
+                ),
+            ).map_err(|e| e.into_static())?;
 
             if self.compute {
                 qh.compute().map_err(|e| e.into_static())?;
@@ -354,9 +367,8 @@ impl QhBuilder {
     /// let builder = unsafe {
     ///     QhBuilder::default()
     ///         .with_configure(|qh| {
-    ///             Qh::try_on_qh_mut(qh, |qh| {
-    ///                 (*qh).DELAUNAY = true as _;
-    ///             })
+    ///             (*Qh::raw_ptr(qh)).DELAUNAY = true as _;
+    ///             Ok(())
     ///         });
     /// };
     /// ```
@@ -425,9 +437,8 @@ macro_rules! add_setting {
         pub $($unsafe)? fn $setter(mut self, $setter: type_mapping::$ty) -> Self {
             self = unsafe {
                 self.with_configure(move |qh| {
-                    Qh::try_on_qh_mut(qh, |qh| {
-                        (*qh).$qhull_name = $setter as _;
-                    })
+                    (qh.qh.get_mut()).$qhull_name = $setter as _;
+                    Ok(())
                 })
             };
             self
@@ -443,9 +454,8 @@ macro_rules! add_setting {
         pub unsafe fn $setter(mut self, $setter: [type_mapping::$ty; $N]) -> Self {
             self = unsafe {
                 self.with_configure(move |qh| {
-                    Qh::try_on_qh_mut(qh, |qh| {
-                        (*qh).$qhull_name = $setter;
-                    })
+                    (qh.qh.get_mut()).$qhull_name = $setter;
+                    Ok(())
                 })
             };
             self
@@ -473,10 +483,9 @@ macro_rules! add_setting {
             }
             self = unsafe {
                 self.with_configure(move |qh| {
-                    Qh::try_on_qh_mut(qh, |qh| {
-                        (*qh).$qhull_name = [0; $N];
-                        (*qh).$qhull_name[..bytes.len()].copy_from_slice(&bytes[..]);
-                    })
+                    (qh.qh.get_mut()).$qhull_name = [0; $N];
+                    (qh.qh.get_mut()).$qhull_name[..bytes.len()].copy_from_slice(&bytes[..]);
+                    Ok(())
                 })
             };
             Ok(self)
@@ -495,9 +504,8 @@ macro_rules! add_setting {
                 self.with_configure(move |qh| {
                     let ptr = $setter.as_ptr();
                     qh.owned_values.$setter = Some($setter.clone());
-                    Qh::try_on_qh_mut(qh, |qh| {
-                        (*qh).$qhull_name = ptr as *mut _;
-                    })
+                    (qh.qh.get_mut()).$qhull_name = ptr as *mut _;
+                    Ok(())
                 })
             };
             Ok(self)
@@ -518,9 +526,8 @@ macro_rules! add_setting {
                 self.with_configure(move |qh| {
                     let ptr = $setter.as_ptr();
                     qh.owned_values.$setter = Some($setter.clone());
-                    Qh::try_on_qh_mut(qh, |qh| {
-                        (*qh).$qhull_name = ptr as *mut _;
-                    })
+                    (qh.qh.get_mut()).$qhull_name = ptr as *mut _;
+                    Ok(())
                 })
             };
             self

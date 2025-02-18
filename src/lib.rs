@@ -42,30 +42,49 @@ impl<'a> Qh<'a> {
     ///
     /// Wraps [`qhull_sys::qh_qhull`],
     pub fn compute(&mut self) -> Result<(), QhError> {
-        unsafe { Qh::try_on_qh_mut(self, |qh| sys::qh_qhull(qh)) }
+        let qh = unsafe { Qh::raw_ptr(self) };
+        unsafe { QhError::try_1(
+            qh,
+            &mut self.buffers().borrow_mut().err_file,
+            sys::qh_qhull,
+            (qh,),
+        ) }
     }
 
     /// Prepare the output of the qhull instance
     ///
     /// Wraps [`qhull_sys::qh_prepare_output`],
     pub fn prepare_output(&mut self) -> Result<(), QhError> {
-        unsafe { Qh::try_on_qh_mut(self, |qh| sys::qh_prepare_output(qh)) }
+        let qh = unsafe { Qh::raw_ptr(self) };
+        unsafe { QhError::try_1(
+            qh,
+            &mut self.buffers().borrow_mut().err_file,
+            sys::qh_prepare_output,
+            (qh,),
+        ) }
     }
 
     /// Check the output of the qhull instance
     ///
     /// Wraps [`qhull_sys::qh_check_output`],
     pub fn check_output(&mut self) -> Result<(), QhError> {
-        unsafe { Qh::try_on_qh_mut(self, |qh| sys::qh_check_output(qh)) }
+        let qh = unsafe { Qh::raw_ptr(self) };
+        unsafe { QhError::try_1(
+            qh,
+            &mut self.buffers().borrow_mut().err_file,
+            sys::qh_check_output,
+            (qh,),
+        ) }
     }
 
     pub fn check_points(&mut self) -> Result<(), QhError> {
-        unsafe {
-            Qh::try_on_qh_mut(self, |qh| {
-                println!("qh_check_points!!!");
-                sys::qh_check_points(qh)
-            })
-        }
+        let qh = unsafe { Qh::raw_ptr(self) };
+        unsafe { QhError::try_1(
+            qh,
+            &mut self.buffers().borrow_mut().err_file,
+            sys::qh_check_points,
+            (qh,),
+        ) }
     }
 
     /// Creates a new Delaunay triangulation
@@ -201,80 +220,17 @@ impl<'a> Qh<'a> {
         self.facets().filter(|f| f.simplicial())
     }
 
-    /// Try a function on the qhull instance
-    ///
-    /// This function provides a way to access and possibly modify the qhull instance.  
-    /// You should use only this function to access the qhull instance, as it provides a way to handle errors.
-    ///
-    /// # Safety
-    /// This function is unsafe because it provides a way to access and possibly modify the qhull instance.
-    ///
-    /// # Example
-    /// ```
-    /// # use qhull::*;
-    /// # let mut qh = Qh::builder()
-    /// #     .build_from_iter([
-    /// #         [0.0, 0.0],
-    /// #         [1.0, 0.0],
-    /// #         [0.0, 1.0],
-    /// #         [0.25, 0.25]
-    /// #    ]).unwrap();
-    /// unsafe {
-    ///     Qh::try_on_qh_mut(&mut qh, |qh| {
-    ///         sys::qh_qhull(qh)
-    ///     }).unwrap();
-    /// }
-    /// ```
-    ///
-    /// It is advised to call as few Qhull fallible functions as possible in order to better locate the source of the error and avoid mistakes. For example:
-    /// ```
-    /// # use qhull::*;
-    /// # let mut qh = Qh::builder()
-    /// #     .build_from_iter([
-    /// #         [0.0, 0.0],
-    /// #         [1.0, 0.0],
-    /// #         [0.0, 1.0],
-    /// #         [0.25, 0.25]
-    /// #    ]).unwrap();
-    /// unsafe {
-    ///     Qh::try_on_qh_mut(&mut qh, |qh| {
-    ///         sys::qh_qhull(qh)
-    ///     }).expect("qhull computation failed");
-    ///
-    ///     Qh::try_on_qh_mut(&mut qh, |qh| {
-    ///         sys::qh_check_output(qh)
-    ///     }).expect("qhull output check failed");
-    /// }
-    /// ```
-    ///
-    pub unsafe fn try_on_qh<'b, R>(
-        qh: &'b Qh,
-        f: impl FnOnce(*const sys::qhT) -> R,
-    ) -> Result<R, QhError<'b>> {
-        unsafe { QhError::try_on_raw(qh.qh.get(), &mut qh.buffers.borrow_mut().err_file, |p| f(p)) }
-    }
-
-    pub unsafe fn try_on_qh_mut<'b, R>(
-        qh: &'b mut Qh,
-        f: impl FnOnce(*mut sys::qhT) -> R,
-    ) -> Result<R, QhError<'b>> {
-        unsafe { QhError::try_on_raw(qh.qh.get(), &mut qh.buffers.borrow_mut().err_file, f) }
-    }
-
     /// Get the pointer to the raw qhT instance
     ///
     /// # Warning
-    /// Prefer using the [`Qh::try_on_qh`] when calling a fallible qhull function.
-    pub unsafe fn raw_ptr(qh: &Qh) -> *const sys::qhT {
+    /// Always use a try function (e.g. [`QhError::try_1`]) when calling a fallible qhull function,
+    /// but not on non-fallible functions such as [`qhull_sys::qh_init_A`] since it would be invalid.
+    pub unsafe fn raw_ptr(qh: &Qh) -> *mut sys::qhT {
         qh.qh.get()
     }
 
-    /// Get the mutable pointer to the raw qhT instance
-    ///
-    /// # Warning
-    /// Prefer using the [`Qh::try_on_qh_mut`] when calling a fallible qhull function.
-    pub unsafe fn raw_ptr_mut(qh: &mut Qh) -> *mut sys::qhT {
-        qh.qh.get_mut()
+    pub fn buffers(&self) -> &RefCell<IOBuffers> {
+        &self.buffers
     }
 }
 
