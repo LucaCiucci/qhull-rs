@@ -158,10 +158,12 @@ impl<'a> Qh<'a> {
         }
         
         let first = Facet::from_ptr(
+            self.qh.get(),
             unsafe { sys::qh_get_facet_list(self.qh.get() as *mut _) },
             self.dim,
         );
         let last = Facet::from_ptr(
+            self.qh.get(),
             unsafe { sys::qh_get_facet_tail(self.qh.get() as *mut _) },
             self.dim,
         );
@@ -227,10 +229,12 @@ impl<'a> Qh<'a> {
         }
 
         let first = Vertex::from_ptr(
+            self.qh.get(),
             unsafe { sys::qh_get_vertex_list(self.qh.get() as *mut _) },
             self.dim,
         );
         let last = Vertex::from_ptr(
+            self.qh.get(),
             unsafe { sys::qh_get_vertex_tail(self.qh.get() as *mut _) },
             self.dim,
         );

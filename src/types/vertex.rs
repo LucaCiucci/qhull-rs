@@ -7,6 +7,7 @@ use crate::{helpers::QhTypeRef, sys, Qh, QhError, Set};
 /// This is a reference to the underlying qhull [`vertexT`](qhull_sys::vertexT).
 #[derive(Clone, Copy)]
 pub struct Vertex<'a> {
+    qh: *mut sys::qhT,
     ptr: *mut sys::vertexT,
     dim: usize,
     _marker: PhantomData<&'a ()>,
@@ -123,13 +124,13 @@ impl<'a> Vertex<'a> {
     /// Get the next vertex in the list
     pub fn next(&self) -> Option<Vertex<'a>> {
         let vertex = unsafe { self.raw_ref() };
-        Self::from_ptr(vertex.next, self.dim())
+        Self::from_ptr(self.qh, vertex.next, self.dim())
     }
 
     /// Get the previous vertex in the list
     pub fn previous(&self) -> Option<Vertex<'a>> {
         let vertex = unsafe { self.raw_ref() };
-        Self::from_ptr(vertex.previous, self.dim())
+        Self::from_ptr(self.qh, vertex.previous, self.dim())
     }
 
     /// Get the coordinates of the vertex
@@ -164,18 +165,19 @@ impl<'a> Vertex<'a> {
     /// Get the neighbors of the vertex
     pub fn neighbors(&self) -> Option<Set<'a, Vertex<'a>>> {
         let vertex = unsafe { self.raw_ref() };
-        Set::maybe_new(vertex.neighbors, self.dim())
+        Set::maybe_new(self.qh, vertex.neighbors, self.dim())
     }
 }
 
 impl<'a> QhTypeRef for Vertex<'a> {
     type FFIType = sys::vertexT;
 
-    fn from_ptr(ptr: *mut Self::FFIType, dim: usize) -> Option<Self> {
+    fn from_ptr(qh: *mut sys::qhT, ptr: *mut Self::FFIType, dim: usize) -> Option<Self> {
         if ptr.is_null() {
             None
         } else {
             Some(Self {
+                qh,
                 ptr,
                 dim,
                 _marker: PhantomData,
