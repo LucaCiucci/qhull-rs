@@ -7,6 +7,7 @@ use crate::{dbg_face_set, helpers::QhTypeRef, sys, Ridge, Set, Vertex};
 /// This is a reference to the underlying qhull [`facetT`](qhull_sys::facetT).
 #[derive(Clone, Copy)]
 pub struct Facet<'a> {
+    qh: *mut sys::qhT,
     ptr: *mut sys::facetT,
     dim: usize,
     _marker: PhantomData<&'a ()>,
@@ -116,17 +117,17 @@ impl<'a> Facet<'a> {
 
     pub fn previous(&self) -> Option<Facet<'a>> {
         let face = unsafe { self.raw_ref() };
-        Self::from_ptr(face.previous, self.dim())
+        Self::from_ptr(self.qh, face.previous, self.dim())
     }
 
     pub fn next(&self) -> Option<Facet<'a>> {
         let face = unsafe { self.raw_ref() };
-        Self::from_ptr(face.next, self.dim())
+        Self::from_ptr(self.qh, face.next, self.dim())
     }
 
     pub fn vertices(&self) -> Option<Set<'a, Vertex<'a>>> {
         let face = unsafe { self.raw_ref() };
-        Set::maybe_new(face.vertices, self.dim())
+        Set::maybe_new(self.qh, face.vertices, self.dim())
     }
 
     pub fn ridges(&self) -> Option<Set<'a, Ridge<'a>>> {
@@ -134,23 +135,23 @@ impl<'a> Facet<'a> {
             None
         } else {
             let face = unsafe { self.raw_ref() };
-            Set::maybe_new(face.ridges, self.dim() - 1)
+            Set::maybe_new(self.qh, face.ridges, self.dim() - 1)
         }
     }
 
     pub fn neighbors(&self) -> Option<Set<'a, Facet<'a>>> {
         let face = unsafe { self.raw_ref() };
-        Set::maybe_new(face.neighbors, self.dim())
+        Set::maybe_new(self.qh, face.neighbors, self.dim())
     }
 
     pub fn outside_set(&self) -> Option<Set<'a, Vertex<'a>>> {
         let face = unsafe { self.raw_ref() };
-        Set::maybe_new(face.outsideset, self.dim())
+        Set::maybe_new(self.qh, face.outsideset, self.dim())
     }
 
     pub fn coplanar_set(&self) -> Option<Set<'a, Vertex<'a>>> {
         let face = unsafe { self.raw_ref() };
-        Set::maybe_new(face.coplanarset, self.dim())
+        Set::maybe_new(self.qh, face.coplanarset, self.dim())
     }
 
     pub fn visit_id(&self) -> u32 {
@@ -291,11 +292,12 @@ impl<'a> Facet<'a> {
 impl<'a> QhTypeRef for Facet<'a> {
     type FFIType = sys::facetT;
 
-    fn from_ptr(ptr: *mut Self::FFIType, dim: usize) -> Option<Self> {
+    fn from_ptr(qh: *mut sys::qhT, ptr: *mut Self::FFIType, dim: usize) -> Option<Self> {
         if ptr.is_null() {
             None
         } else {
             Some(Self {
+                qh,
                 ptr,
                 dim,
                 _marker: PhantomData,
