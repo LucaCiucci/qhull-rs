@@ -117,30 +117,59 @@ impl<'a> Qh<'a> {
     ///   To avoid it, use the [`Qh::facets`] function or just [`filter`](std::iter::Iterator::filter) the iterator
     ///   checking for [`Facet::is_sentinel`].
     pub fn all_facets(&self) -> impl Iterator<Item = Facet> {
-        let mut current = Facet::from_ptr(
+        /// Iterator for facets with size hint
+        struct FacetIter<'a> {
+            front: Option<Facet<'a>>,
+            back: Option<Facet<'a>>,
+            remaining: usize,
+        }
+
+        impl<'a> Iterator for FacetIter<'a> {
+            type Item = Facet<'a>;
+
+            fn next(&mut self) -> Option<Self::Item> {
+                if self.remaining == 0 {
+                    return None;
+                }
+                let front = self.front.take()?;
+                self.front = front.next();
+                debug_assert!(self.remaining > 0);
+                self.remaining = self.remaining.max(1) - 1;
+                Some(front)
+            }
+
+            fn size_hint(&self) -> (usize, Option<usize>) {
+                let len = self.remaining;
+                (len, Some(len))
+            }
+        }
+
+        impl<'a> DoubleEndedIterator for FacetIter<'a> {
+            fn next_back(&mut self) -> Option<Self::Item> {
+                if self.remaining == 0 {
+                    return None;
+                }
+                let back = self.back.take()?;
+                self.back = back.previous();
+                debug_assert!(self.remaining > 0);
+                self.remaining = self.remaining.max(1) - 1;
+                Some(back)
+            }
+        }
+        
+        let first = Facet::from_ptr(
             unsafe { sys::qh_get_facet_list(self.qh.get() as *mut _) },
             self.dim,
         );
-
-        std::iter::from_fn(move || current.take().map(|v| {
-            current = v.next();
-            v
-        }))
-    }
-
-    /// Get all the facets in the hull in reverse order
-    ///
-    /// See [`Qh::all_facets`] for more information.
-    pub fn all_facets_rev(&self) -> impl Iterator<Item = Facet> {
-        let mut current = Facet::from_ptr(
+        let last = Facet::from_ptr(
             unsafe { sys::qh_get_facet_tail(self.qh.get() as *mut _) },
             self.dim,
         );
-
-        std::iter::from_fn(move || current.take().map(|v| {
-            current = v.previous();
-            v
-        }))
+        FacetIter {
+            front: first,
+            back: last,
+            remaining: self.num_facets(),
+        }
     }
 
     /// Get the facets in the hull
@@ -152,30 +181,70 @@ impl<'a> Qh<'a> {
         self.all_facets().filter(|f| !f.is_sentinel())
     }
 
+    /// Get all the vertices in the hull
+    ///
+    /// # Remarks
+    /// * This function will return all vertices, including the sentinel vertex.
     pub fn all_vertices(&self) -> impl Iterator<Item = Vertex> {
-        let mut current = Vertex::from_ptr(
+        /// Iterator for vertices with size hint
+        struct VertexIter<'a> {
+            front: Option<Vertex<'a>>,
+            back: Option<Vertex<'a>>,
+            remaining: usize,
+        }
+
+        impl<'a> Iterator for VertexIter<'a> {
+            type Item = Vertex<'a>;
+
+            fn next(&mut self) -> Option<Self::Item> {
+                if self.remaining == 0 {
+                    return None;
+                }
+                let front = self.front.take()?;
+                self.front = front.next();
+                debug_assert!(self.remaining > 0);
+                self.remaining = self.remaining.max(1) - 1;
+                Some(front)
+            }
+
+            fn size_hint(&self) -> (usize, Option<usize>) {
+                let len = self.remaining;
+                (len, Some(len))
+            }
+        }
+
+        impl<'a> DoubleEndedIterator for VertexIter<'a> {
+            fn next_back(&mut self) -> Option<Self::Item> {
+                if self.remaining == 0 {
+                    return None;
+                }
+                let back = self.back.take()?;
+                self.back = back.previous();
+                debug_assert!(self.remaining > 0);
+                self.remaining = self.remaining.max(1) - 1;
+                Some(back)
+            }
+        }
+
+        let first = Vertex::from_ptr(
             unsafe { sys::qh_get_vertex_list(self.qh.get() as *mut _) },
             self.dim,
         );
-
-        std::iter::from_fn(move || current.take().map(|v| {
-            current = v.next();
-            v
-        }))
-    }
-
-    pub fn all_vertices_rev(&self) -> impl Iterator<Item = Vertex> {
-        let mut current = Vertex::from_ptr(
+        let last = Vertex::from_ptr(
             unsafe { sys::qh_get_vertex_tail(self.qh.get() as *mut _) },
             self.dim,
         );
-
-        std::iter::from_fn(move || current.take().map(|v| {
-            current = v.previous();
-            v
-        }))
+        VertexIter {
+            front: first,
+            back: last,
+            remaining: self.num_vertices(),
+        }
     }
 
+    /// Get the vertices in the hull
+    ///
+    /// # Remarks
+    /// * This function will not return the sentinel vertex.
     pub fn vertices(&self) -> impl Iterator<Item = Vertex> {
         self.all_vertices().filter(|v| !v.is_sentinel())
     }
