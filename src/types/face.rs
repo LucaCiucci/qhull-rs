@@ -98,7 +98,7 @@ impl<'a> Facet<'a> {
             face.normal
                 .is_null()
                 .not()
-                .then(|| std::slice::from_raw_parts(dbg!(face.normal), self.dim()))
+                .then(|| std::slice::from_raw_parts(face.normal, self.dim()))
         }
     }
 
@@ -110,7 +110,7 @@ impl<'a> Facet<'a> {
             face.center
                 .is_null()
                 .not()
-                .then(|| std::slice::from_raw_parts(dbg!(face.center), self.dim()))
+                .then(|| std::slice::from_raw_parts(face.center, self.dim()))
         }
     }
 

@@ -207,7 +207,6 @@ impl QhBuilder {
                 .map(|arg| arg.as_ptr())
                 .chain(std::iter::once(ptr::null()))
                 .collect::<Vec<_>>();
-            println!("{:?}", argv);
             let argc = argv.len() as i32 - 1;
             let argv = argv.as_ptr() as *mut _;
 
