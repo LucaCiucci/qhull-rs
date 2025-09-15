@@ -238,6 +238,9 @@ impl<'a> Drop for Qh<'a> {
     fn drop(&mut self) {
         unsafe {
             sys::qh_freeqhull(self.qh.get_mut(), !sys::qh_ALL);
+            let mut curlong: i32 = 0;
+            let mut totlong: i32 = 0;
+            sys::qh_memfreeshort(self.qh.get_mut(), &mut curlong, &mut totlong);
         }
     }
 }
