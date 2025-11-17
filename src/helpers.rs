@@ -3,11 +3,13 @@ use std::{
     os::raw::{c_char, c_int},
 };
 
+use qhull_sys as sys;
+
 /// A trait for types that can be created from a pointer to a C type and a dimension.
 pub trait QhTypeRef: Sized {
     type FFIType;
 
-    fn from_ptr(ptr: *mut Self::FFIType, dim: usize) -> Option<Self>;
+    fn from_ptr(qh: *mut sys::qhT, ptr: *mut Self::FFIType, dim: usize) -> Option<Self>;
 
     /// Returns a raw pointer to the C type.
     ///

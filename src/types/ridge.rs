@@ -4,6 +4,7 @@ use crate::{helpers::QhTypeRef, sys, Facet, Set, Vertex};
 
 #[derive(Clone, Copy)]
 pub struct Ridge<'a> {
+    qh: *mut sys::qhT,
     ridge: *mut sys::ridgeT,
     dim: usize,
     _phantom: PhantomData<&'a ()>,
@@ -30,17 +31,17 @@ impl<'a> Debug for Ridge<'a> {
 impl<'a> Ridge<'a> {
     pub fn vertices(&self) -> Option<Set<'a, Vertex<'a>>> {
         let ridge = unsafe { self.raw_ref() };
-        Set::maybe_new(ridge.vertices, self.dim)
+        Set::maybe_new(self.qh, ridge.vertices, self.dim)
     }
 
     pub fn top(&self) -> Facet<'a> {
         let ridge = unsafe { self.raw_ref() };
-        Facet::from_ptr(ridge.top, self.dim).unwrap()
+        Facet::from_ptr(self.qh, ridge.top, self.dim).unwrap()
     }
 
     pub fn bottom(&self) -> Facet<'a> {
         let ridge = unsafe { self.raw_ref() };
-        Facet::from_ptr(ridge.bottom, self.dim).unwrap()
+        Facet::from_ptr(self.qh, ridge.bottom, self.dim).unwrap()
     }
 
     pub fn id(&self) -> u32 {
@@ -87,11 +88,12 @@ impl<'a> Ridge<'a> {
 impl<'a> QhTypeRef for Ridge<'a> {
     type FFIType = sys::ridgeT;
 
-    fn from_ptr(ptr: *mut Self::FFIType, dim: usize) -> Option<Self> {
+    fn from_ptr(qh: *mut sys::qhT, ptr: *mut Self::FFIType, dim: usize) -> Option<Self> {
         if ptr.is_null() {
             None
         } else {
             Some(Self {
+                qh,
                 ridge: ptr,
                 dim,
                 _phantom: PhantomData,
