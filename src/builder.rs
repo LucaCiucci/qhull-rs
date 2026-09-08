@@ -1,4 +1,9 @@
-use std::{cell::{RefCell, UnsafeCell}, ffi::{CStr, CString}, marker::PhantomData, ptr};
+use std::{
+    cell::{RefCell, UnsafeCell},
+    ffi::{CStr, CString},
+    marker::PhantomData,
+    ptr,
+};
 
 use crate::{
     helpers::{collect_coords, CollectedCoords},
@@ -8,8 +13,7 @@ use crate::{
 
 type QhConfigurator = Box<dyn for<'b> Fn(&'b mut Qh) -> Result<(), QhError<'b>> + 'static>;
 
-#[derive(Debug)]
-#[derive(thiserror::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum InvalidStringError {
     #[error(transparent)]
     NulError(#[from] std::ffi::NulError),
@@ -75,12 +79,14 @@ impl QhBuilder {
     /// Add arguments for the qhull library
     ///
     /// These arguments are used by [`qhull_sys::qh_init_A`] before setting any other option.
-    pub fn qhull_args<S: AsRef<str>>(mut self, args: impl IntoIterator<Item = S>) -> Result<Self, InvalidStringError> {
+    pub fn qhull_args<S: AsRef<str>>(
+        mut self,
+        args: impl IntoIterator<Item = S>,
+    ) -> Result<Self, InvalidStringError> {
         self.args.extend(
-            args
-                .into_iter()
+            args.into_iter()
                 .map(|arg| CString::new(arg.as_ref()))
-                .collect::<Result<Vec<_>, _>>()?
+                .collect::<Result<Vec<_>, _>>()?,
         );
         Ok(self)
     }
@@ -244,16 +250,15 @@ impl QhBuilder {
                     (*qh_ptr).qhull_command.as_ptr() as *mut _,
                     HIDDEN_OPTIONS.as_ptr() as *mut _,
                 ),
-            ).map_err(|e| e.into_static())?;
+            )
+            .map_err(|e| e.into_static())?;
             QhError::try_2(
                 qh_ptr,
                 &mut qh.buffers.borrow_mut().err_file,
                 sys::qh_initflags,
-                (
-                    qh_ptr,
-                    (*qh_ptr).qhull_command.as_ptr() as *mut _,
-                ),
-            ).map_err(|e| e.into_static())?;
+                (qh_ptr, (*qh_ptr).qhull_command.as_ptr() as *mut _),
+            )
+            .map_err(|e| e.into_static())?;
 
             for config in self.configs {
                 config(&mut qh).map_err(|e| e.into_static())?;
@@ -270,7 +275,8 @@ impl QhBuilder {
                     dim as _,
                     false as _,
                 ),
-            ).map_err(|e| e.into_static())?;
+            )
+            .map_err(|e| e.into_static())?;
 
             if self.compute {
                 qh.compute().map_err(|e| e.into_static())?;
@@ -725,13 +731,13 @@ mod tests {
 
         let faces = qh
             .facets()
-            .map(|face| face
-                .vertices()
-                .unwrap()
-                .iter()
-                .map(|v| v.point_id(&qh).unwrap())
-                .collect::<Vec<_>>()
-            )
+            .map(|face| {
+                face.vertices()
+                    .unwrap()
+                    .iter()
+                    .map(|v| v.point_id(&qh).unwrap())
+                    .collect::<Vec<_>>()
+            })
             .collect::<Vec<_>>();
 
         assert_eq!(
@@ -753,13 +759,13 @@ mod tests {
 
         let faces = qh
             .facets()
-            .map(|face| face
-                .vertices()
-                .unwrap()
-                .iter()
-                .map(|v| v.point_id(&qh).unwrap())
-                .collect::<Vec<_>>()
-            )
+            .map(|face| {
+                face.vertices()
+                    .unwrap()
+                    .iter()
+                    .map(|v| v.point_id(&qh).unwrap())
+                    .collect::<Vec<_>>()
+            })
             .collect::<Vec<_>>();
 
         assert_eq!(
@@ -784,13 +790,13 @@ mod tests {
 
         let faces = qh
             .facets()
-            .map(|face| face
-                .vertices()
-                .unwrap()
-                .iter()
-                .map(|v| v.point_id(&qh).unwrap())
-                .collect::<Vec<_>>()
-            )
+            .map(|face| {
+                face.vertices()
+                    .unwrap()
+                    .iter()
+                    .map(|v| v.point_id(&qh).unwrap())
+                    .collect::<Vec<_>>()
+            })
             .collect::<Vec<_>>();
 
         assert_eq!(
@@ -806,19 +812,20 @@ mod tests {
 
         let qh = Qh::builder()
             .compute(true)
-            .qhull_args(&["Qt"]).unwrap()
+            .qhull_args(&["Qt"])
+            .unwrap()
             .build_from_iter(POINTS_WITH_COPLANAR_SUBSET.iter().cloned())
             .expect("Failed to compute convex hull");
 
         let faces = qh
             .facets()
-            .map(|face| face
-                .vertices()
-                .unwrap()
-                .iter()
-                .map(|v| v.point_id(&qh).unwrap())
-                .collect::<Vec<_>>()
-            )
+            .map(|face| {
+                face.vertices()
+                    .unwrap()
+                    .iter()
+                    .map(|v| v.point_id(&qh).unwrap())
+                    .collect::<Vec<_>>()
+            })
             .collect::<Vec<_>>();
 
         assert_eq!(

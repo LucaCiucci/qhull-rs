@@ -46,9 +46,7 @@ impl<'a, T: QhTypeRef> Set<'a, T> {
     }
 
     pub fn size(&self, qh: &Qh) -> usize {
-        unsafe {
-            sys::qh_setsize(Qh::raw_ptr(qh) as *mut _, self.set) as usize
-        }
+        unsafe { sys::qh_setsize(Qh::raw_ptr(qh) as *mut _, self.set) as usize }
     }
 }
 

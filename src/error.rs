@@ -159,14 +159,7 @@ impl<'a> QhError<'a> {
         f: unsafe extern "C" fn(*mut c_void),
         data: *mut c_void,
     ) -> Result<(), QhError<'b>> {
-
-        let err_code = unsafe {
-            sys::qhull_sys__try_on_qh(
-                &mut *qh,
-                Some(f),
-                data,
-            )
-        };
+        let err_code = unsafe { sys::qhull_sys__try_on_qh(&mut *qh, Some(f), data) };
 
         let qh = &mut *qh;
 
@@ -188,8 +181,6 @@ impl<'a> QhError<'a> {
         }
     }
 }
-
-
 
 struct CCBData<F, Args, R> {
     pub f: F,
@@ -230,7 +221,7 @@ macro_rules! impl_try {
                     args: ($($arg,)*),
                     result: None,
                 };
-        
+
                 unsafe extern "C" fn cb<R, $($Arg: Copy),*>(data: *mut c_void) {
                     let CCBData {
                         f,
@@ -240,7 +231,7 @@ macro_rules! impl_try {
                     let r = f($(*$arg,)*);
                     *result = Some(r);
                 }
-        
+
                 Self::try_impl(
                     qh,
                     err_file,

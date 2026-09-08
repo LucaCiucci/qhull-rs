@@ -54,15 +54,20 @@ impl<'a> Vertex<'a> {
     ///
     /// Use [`Vertex::index_unchecked`] if you are sure that the vertex has coordinates
     pub fn index(&self, qh: &Qh) -> Option<usize> {
-        debug_assert_eq!(qh.dim, unsafe { sys::qh_get_hull_dim(qh.qh.get()) as usize });
+        debug_assert_eq!(qh.dim, unsafe {
+            sys::qh_get_hull_dim(qh.qh.get()) as usize
+        });
 
         let first_ptr = unsafe { sys::qh_get_first_point(qh.qh.get()) as *const f64 };
-        let end_ptr = unsafe { first_ptr.add(sys::qh_get_num_points(qh.qh.get()) as usize * qh.dim) };
+        let end_ptr =
+            unsafe { first_ptr.add(sys::qh_get_num_points(qh.qh.get()) as usize * qh.dim) };
 
         // perform some additional checks if we own the coordinates
         if let Some(coords_holder) = qh.coords_holder.as_ref() {
             debug_assert_eq!(first_ptr, coords_holder.as_slice().as_ptr());
-            debug_assert_eq!(end_ptr, unsafe { coords_holder.as_slice().as_ptr().add(coords_holder.len()) });
+            debug_assert_eq!(end_ptr, unsafe {
+                coords_holder.as_slice().as_ptr().add(coords_holder.len())
+            });
         }
 
         if self.is_sentinel() {

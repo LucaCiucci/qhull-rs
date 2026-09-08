@@ -1,6 +1,10 @@
 #![doc = include_str!("../README.md")]
 
-use std::{cell::{RefCell, UnsafeCell}, ffi::CString, marker::PhantomData};
+use std::{
+    cell::{RefCell, UnsafeCell},
+    ffi::CString,
+    marker::PhantomData,
+};
 
 use helpers::{prepare_delaunay_points, CollectedCoords, QhTypeRef};
 use io_buffers::IOBuffers;
@@ -43,12 +47,14 @@ impl<'a> Qh<'a> {
     /// Wraps [`qhull_sys::qh_qhull`],
     pub fn compute(&mut self) -> Result<(), QhError<'a>> {
         let qh = unsafe { Qh::raw_ptr(self) };
-        unsafe { QhError::try_1(
-            qh,
-            &mut self.buffers().borrow_mut().err_file,
-            sys::qh_qhull,
-            (qh,),
-        ) }
+        unsafe {
+            QhError::try_1(
+                qh,
+                &mut self.buffers().borrow_mut().err_file,
+                sys::qh_qhull,
+                (qh,),
+            )
+        }
     }
 
     /// Prepare the output of the qhull instance
@@ -56,12 +62,14 @@ impl<'a> Qh<'a> {
     /// Wraps [`qhull_sys::qh_prepare_output`],
     pub fn prepare_output(&mut self) -> Result<(), QhError<'a>> {
         let qh = unsafe { Qh::raw_ptr(self) };
-        unsafe { QhError::try_1(
-            qh,
-            &mut self.buffers().borrow_mut().err_file,
-            sys::qh_prepare_output,
-            (qh,),
-        ) }
+        unsafe {
+            QhError::try_1(
+                qh,
+                &mut self.buffers().borrow_mut().err_file,
+                sys::qh_prepare_output,
+                (qh,),
+            )
+        }
     }
 
     /// Check the output of the qhull instance
@@ -69,22 +77,26 @@ impl<'a> Qh<'a> {
     /// Wraps [`qhull_sys::qh_check_output`],
     pub fn check_output(&mut self) -> Result<(), QhError<'a>> {
         let qh = unsafe { Qh::raw_ptr(self) };
-        unsafe { QhError::try_1(
-            qh,
-            &mut self.buffers().borrow_mut().err_file,
-            sys::qh_check_output,
-            (qh,),
-        ) }
+        unsafe {
+            QhError::try_1(
+                qh,
+                &mut self.buffers().borrow_mut().err_file,
+                sys::qh_check_output,
+                (qh,),
+            )
+        }
     }
 
     pub fn check_points(&mut self) -> Result<(), QhError<'a>> {
         let qh = unsafe { Qh::raw_ptr(self) };
-        unsafe { QhError::try_1(
-            qh,
-            &mut self.buffers().borrow_mut().err_file,
-            sys::qh_check_points,
-            (qh,),
-        ) }
+        unsafe {
+            QhError::try_1(
+                qh,
+                &mut self.buffers().borrow_mut().err_file,
+                sys::qh_check_points,
+                (qh,),
+            )
+        }
     }
 
     /// Creates a new Delaunay triangulation
@@ -122,10 +134,12 @@ impl<'a> Qh<'a> {
             self.dim,
         );
 
-        std::iter::from_fn(move || current.take().map(|v| {
-            current = v.next();
-            v
-        }))
+        std::iter::from_fn(move || {
+            current.take().map(|v| {
+                current = v.next();
+                v
+            })
+        })
     }
 
     /// Get all the facets in the hull in reverse order
@@ -137,10 +151,12 @@ impl<'a> Qh<'a> {
             self.dim,
         );
 
-        std::iter::from_fn(move || current.take().map(|v| {
-            current = v.previous();
-            v
-        }))
+        std::iter::from_fn(move || {
+            current.take().map(|v| {
+                current = v.previous();
+                v
+            })
+        })
     }
 
     /// Get the facets in the hull
@@ -158,10 +174,12 @@ impl<'a> Qh<'a> {
             self.dim,
         );
 
-        std::iter::from_fn(move || current.take().map(|v| {
-            current = v.next();
-            v
-        }))
+        std::iter::from_fn(move || {
+            current.take().map(|v| {
+                current = v.next();
+                v
+            })
+        })
     }
 
     pub fn all_vertices_rev(&self) -> impl Iterator<Item = Vertex<'a>> {
@@ -170,10 +188,12 @@ impl<'a> Qh<'a> {
             self.dim,
         );
 
-        std::iter::from_fn(move || current.take().map(|v| {
-            current = v.previous();
-            v
-        }))
+        std::iter::from_fn(move || {
+            current.take().map(|v| {
+                current = v.previous();
+                v
+            })
+        })
     }
 
     pub fn vertices(&self) -> impl Iterator<Item = Vertex<'a>> {

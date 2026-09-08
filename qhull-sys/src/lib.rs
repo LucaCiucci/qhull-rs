@@ -15,7 +15,9 @@ include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
 pub const QHULL_LICENSE_TEXT: &str = include_str!("../qhull/COPYING.txt");
 
-fn str_from_c_char_array<'a>(data: &'a [core::ffi::c_char]) -> Result<&'a CStr, FromBytesUntilNulError> {
+fn str_from_c_char_array<'a>(
+    data: &'a [core::ffi::c_char],
+) -> Result<&'a CStr, FromBytesUntilNulError> {
     unsafe {
         CStr::from_bytes_until_nul(core::slice::from_raw_parts(
             data.as_ptr() as *const u8,
