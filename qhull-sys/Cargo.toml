@@ -32,8 +32,8 @@ include = [
 [dependencies]
 
 [build-dependencies]
-bindgen = "0.69"
-cc = "1.0"
+bindgen = "0.72.1"
+cc = "1.4.5"
 
 [features]
 default = []
