@@ -210,6 +210,9 @@ macro_rules! impl_try {
         /// - <https://learn.microsoft.com/en-en/cpp/cpp/using-setjmp-longjmp?view=msvc-170>
         /// - <http://groups.di.unipi.it/~nids/docs/longjump_try_trow_catch.html>
         impl<'a> QhError<'a> {
+            /// # Safety
+            ///
+            /// This must not be nested or called while Qhull is already handling an error.
             pub unsafe fn $name<'b, R, $($Arg: Copy),*>(
                 qh: *mut sys::qhT,
                 err_file: &mut Option<TmpFile>,

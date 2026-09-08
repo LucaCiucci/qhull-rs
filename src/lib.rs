@@ -135,9 +135,8 @@ impl<'a> Qh<'a> {
         );
 
         std::iter::from_fn(move || {
-            current.take().map(|v| {
+            current.take().inspect(|v| {
                 current = v.next();
-                v
             })
         })
     }
@@ -152,9 +151,8 @@ impl<'a> Qh<'a> {
         );
 
         std::iter::from_fn(move || {
-            current.take().map(|v| {
+            current.take().inspect(|v| {
                 current = v.previous();
-                v
             })
         })
     }
@@ -175,9 +173,8 @@ impl<'a> Qh<'a> {
         );
 
         std::iter::from_fn(move || {
-            current.take().map(|v| {
+            current.take().inspect(|v| {
                 current = v.next();
-                v
             })
         })
     }
@@ -189,9 +186,8 @@ impl<'a> Qh<'a> {
         );
 
         std::iter::from_fn(move || {
-            current.take().map(|v| {
+            current.take().inspect(|v| {
                 current = v.previous();
-                v
             })
         })
     }
@@ -245,6 +241,9 @@ impl<'a> Qh<'a> {
     /// # Warning
     /// Always use a try function (e.g. [`QhError::try_1`]) when calling a fallible qhull function,
     /// but not on non-fallible functions such as [`qhull_sys::qh_init_A`] since it would be invalid.
+    ///
+    /// # Safety
+    /// The returned pointer is only valid as long as the `Qh` instance is alive.
     pub unsafe fn raw_ptr(qh: &Qh) -> *mut sys::qhT {
         qh.qh.get()
     }

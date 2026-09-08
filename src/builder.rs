@@ -812,7 +812,7 @@ mod tests {
 
         let qh = Qh::builder()
             .compute(true)
-            .qhull_args(&["Qt"])
+            .qhull_args(["Qt"])
             .unwrap()
             .build_from_iter(POINTS_WITH_COPLANAR_SUBSET.iter().cloned())
             .expect("Failed to compute convex hull");

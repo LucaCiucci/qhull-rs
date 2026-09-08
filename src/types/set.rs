@@ -1,7 +1,6 @@
 use std::ffi::c_void;
 use std::fmt::Debug;
 use std::marker::PhantomData;
-use std::ops::Not;
 
 use crate::helpers::QhTypeRef;
 
@@ -28,7 +27,7 @@ where
 
 impl<'a, T: QhTypeRef> Set<'a, T> {
     pub(crate) fn maybe_new(set: *mut sys::setT, dim: usize) -> Option<Self> {
-        set.is_null().not().then(|| Self {
+        (!set.is_null()).then_some(Self {
             set,
             dim,
             _phantom: PhantomData,

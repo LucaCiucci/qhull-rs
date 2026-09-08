@@ -52,6 +52,10 @@ fn main() {
         .header(wrapper.to_str().unwrap())
         .header("src/error_handling.h")
         .use_core() // no_std
+        // `float.h` exposes these through both macros and an enum when all
+        // Qhull headers are processed. They are C-library details, not part
+        // of Qhull's API, and Bindgen otherwise emits duplicate Rust names.
+        .blocklist_item("FP_(NAN|INFINITE|ZERO|SUBNORMAL|NORMAL)")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .clang_args([
             "-Iqhull/src/libqhull_r".to_string(),

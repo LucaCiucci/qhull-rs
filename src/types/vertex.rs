@@ -71,20 +71,20 @@ impl<'a> Vertex<'a> {
         }
 
         if self.is_sentinel() {
-            return None;
-        }
-
-        let current_ptr = self.point()?.as_ptr();
-
-        if current_ptr < first_ptr || current_ptr >= end_ptr {
-            return None;
+            None
         } else {
-            let diff = current_ptr as usize - first_ptr as usize;
-            let point_size = std::mem::size_of::<f64>() * qh.dim;
-            debug_assert_eq!(diff % point_size, 0);
-            let index = diff / point_size;
-            debug_assert!(index < unsafe { sys::qh_get_num_points(qh.qh.get()) as usize });
-            Some(index)
+            let current_ptr = self.point()?.as_ptr();
+
+            if current_ptr < first_ptr || current_ptr >= end_ptr {
+                None
+            } else {
+                let diff = current_ptr as usize - first_ptr as usize;
+                let point_size = std::mem::size_of::<f64>() * qh.dim;
+                debug_assert_eq!(diff % point_size, 0);
+                let index = diff / point_size;
+                debug_assert!(index < unsafe { sys::qh_get_num_points(qh.qh.get()) as usize });
+                Some(index)
+            }
         }
     }
 
@@ -114,8 +114,7 @@ impl<'a> Vertex<'a> {
         let diff = current_ptr as usize - first_ptr as usize;
         let point_size = std::mem::size_of::<f64>() * qh.dim;
         debug_assert_eq!(diff % point_size, 0);
-        let index = diff / point_size;
-        index
+        diff / point_size
     }
 
     /// The dimension of the vertex

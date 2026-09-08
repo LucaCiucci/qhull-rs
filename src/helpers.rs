@@ -62,7 +62,7 @@ where
     let mut pt: Vec<f64> = Vec::new();
     for point in points.into_iter() {
         pt.clear();
-        pt.extend(point.into_iter());
+        pt.extend(point);
         if let Some(d) = dim {
             assert_eq!(pt.len(), d, "points have different dimensions");
         } else {
