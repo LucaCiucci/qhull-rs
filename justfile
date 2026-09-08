@@ -20,3 +20,14 @@ ci-clippy:
 
 ci-docs:
     cargo doc --verbose --all-features
+
+# Verify that the current commit is ready to be published as a tagged release.
+release-check:
+    ./scripts/release-check.sh
+    just ci
+    cargo publish --package qhull-sys --locked --dry-run
+
+# Publish qhull-sys before qhull so the latter can resolve its exact dependency.
+publish: release-check
+    cargo publish --package qhull-sys --locked
+    cargo publish --package qhull --locked

@@ -191,7 +191,7 @@ dependencies = [
 
 [[package]]
 name = "qhull"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "qhull-sys",
  "rand",
@@ -201,7 +201,7 @@ dependencies = [
 
 [[package]]
 name = "qhull-sys"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "bindgen",
  "cc",

@@ -96,6 +96,14 @@ If you also install [just](https://just.systems/), you can run the CI suite loca
 just ci
 ```
 
+### Releasing
+
+After committing and tagging the release as `v<version>`, run:
+
+```sh
+just publish
+```
+
 ## License
 
 This crate uses Qhull, please refer to the [Qhull license](http://www.qhull.org/COPYING.txt) for more information when using this crate.
