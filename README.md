@@ -1,17 +1,16 @@
 # qhull-rs
-Safe Rust [Qhull](http://www.qhull.org/) bindings
+
+Safe Rust bindings for [Qhull](http://www.qhull.org/), a library for convex hulls,
+Delaunay triangulations, Voronoi diagrams, and halfspace intersections in two or
+more dimensions.
 
 [![Crates.io Version](https://img.shields.io/crates/v/qhull)](https://crates.io/crates/qhull)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/LucaCiucci/qhull-rs/rust.yml)](https://github.com/LucaCiucci/qhull-rs/actions)
 [![docs.rs](https://img.shields.io/docsrs/qhull)](https://docs.rs/qhull)
 
-
-
-> [Qhull](http://www.qhull.org/) computes the **convex hull**, **Delaunay** triangulation, **Voronoi** diagram, **halfspace intersection** about a point, **furthest-site Delaunay** triangulation, and furthest-site Voronoi diagram. The source code runs in **2-d**, **3-d**, **4-d**, and **higher dimensions**. Qhull implements the **Quickhull algorithm** for computing the convex hull. It handles roundoff errors from floating point arithmetic. It computes volumes, surface areas, and approximations to the convex hull.
-> 
-> Qhull does not support triangulation of non-convex surfaces, mesh generation of non-convex objects, medium-sized inputs in 9-D and higher, alpha shapes, weighted Voronoi diagrams, Voronoi volumes, or constrained Delaunay triangulations.
->
-> &nbsp;&nbsp;&nbsp;&nbsp;\- [_Qhull main page_](http://www.qhull.org/) (retrieved<!--accessed?--> 2024-09-02)
+Qhull implements the Quickhull algorithm and handles floating-point roundoff
+errors. See the [Qhull documentation](http://www.qhull.org/) for its supported
+operations and limitations.
 
 ## Quick start
 
@@ -19,9 +18,10 @@ Safe Rust [Qhull](http://www.qhull.org/) bindings
 cargo run --example hull
 ```
 
-### Binaries
+### Command-line tools
 
-`qhull-rs` provides some binary targets from the original Qhull source code:
+The crate also provides command-line tools from the original Qhull source:
+
 - `qconvex`
 - `qdelaunay`
 - `qhalf`
@@ -29,10 +29,10 @@ cargo run --example hull
 - `qvoronoi`
 - `rbox`
 
-To get them:
+Install them with:
+
 ```sh
 cargo install qhull
-qhull
 ```
 
 ## Usage
@@ -44,10 +44,13 @@ qhull = "0.4"
 ```
 
 For the current development version:
+
 ```toml
 [dependencies]
 qhull = { git = "https://github.com/LucaCiucci/qhull-rs" }
 ```
+
+Read the [API documentation](https://docs.rs/qhull) for the full interface.
 
 ### Example
 
@@ -76,6 +79,22 @@ for simplex in qh.simplices() {
 ```
 
 See the [`examples`] module/folder for more examples.
+
+## Development
+
+Building requires a Rust toolchain, a C compiler, and `libclang`.
+
+Clone the repository with its Qhull submodule:
+```sh
+git clone --recurse-submodules https://github.com/LucaCiucci/qhull-rs.git
+cd qhull-rs
+cargo build
+```
+
+If you also install [just](https://just.systems/), you can run the CI suite locally with:
+```sh
+just ci
+```
 
 ## License
 
