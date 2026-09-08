@@ -186,7 +186,7 @@ impl QhBuilder {
     /// * If the number of points is not divisible by the dimension
     /// * If the dimensionality of the points does not match the hint
     /// * Cannot create a temporary file for capturing stdout or stderr
-    pub fn build(self, dim: usize, points: &mut [f64]) -> Result<Qh, QhError> {
+    pub fn build<'a>(self, dim: usize, points: &'a mut [f64]) -> Result<Qh<'a>, QhError<'a>> {
         if let Some(dim_hint) = self.dim {
             assert_eq!(
                 dim, dim_hint,

@@ -41,7 +41,7 @@ impl<'a> Qh<'a> {
     /// Compute the convex hull
     ///
     /// Wraps [`qhull_sys::qh_qhull`],
-    pub fn compute(&mut self) -> Result<(), QhError> {
+    pub fn compute(&mut self) -> Result<(), QhError<'a>> {
         let qh = unsafe { Qh::raw_ptr(self) };
         unsafe { QhError::try_1(
             qh,
@@ -54,7 +54,7 @@ impl<'a> Qh<'a> {
     /// Prepare the output of the qhull instance
     ///
     /// Wraps [`qhull_sys::qh_prepare_output`],
-    pub fn prepare_output(&mut self) -> Result<(), QhError> {
+    pub fn prepare_output(&mut self) -> Result<(), QhError<'a>> {
         let qh = unsafe { Qh::raw_ptr(self) };
         unsafe { QhError::try_1(
             qh,
@@ -67,7 +67,7 @@ impl<'a> Qh<'a> {
     /// Check the output of the qhull instance
     ///
     /// Wraps [`qhull_sys::qh_check_output`],
-    pub fn check_output(&mut self) -> Result<(), QhError> {
+    pub fn check_output(&mut self) -> Result<(), QhError<'a>> {
         let qh = unsafe { Qh::raw_ptr(self) };
         unsafe { QhError::try_1(
             qh,
@@ -77,7 +77,7 @@ impl<'a> Qh<'a> {
         ) }
     }
 
-    pub fn check_points(&mut self) -> Result<(), QhError> {
+    pub fn check_points(&mut self) -> Result<(), QhError<'a>> {
         let qh = unsafe { Qh::raw_ptr(self) };
         unsafe { QhError::try_1(
             qh,
@@ -116,7 +116,7 @@ impl<'a> Qh<'a> {
     /// * this function will also return the sentinel face, which is the last face in the list of facets.
     ///   To avoid it, use the [`Qh::facets`] function or just [`filter`](std::iter::Iterator::filter) the iterator
     ///   checking for [`Facet::is_sentinel`].
-    pub fn all_facets(&self) -> impl Iterator<Item = Facet> {
+    pub fn all_facets(&self) -> impl Iterator<Item = Facet<'a>> {
         let mut current = Facet::from_ptr(
             unsafe { sys::qh_get_facet_list(self.qh.get() as *mut _) },
             self.dim,
@@ -131,7 +131,7 @@ impl<'a> Qh<'a> {
     /// Get all the facets in the hull in reverse order
     ///
     /// See [`Qh::all_facets`] for more information.
-    pub fn all_facets_rev(&self) -> impl Iterator<Item = Facet> {
+    pub fn all_facets_rev(&self) -> impl Iterator<Item = Facet<'a>> {
         let mut current = Facet::from_ptr(
             unsafe { sys::qh_get_facet_tail(self.qh.get() as *mut _) },
             self.dim,
@@ -148,11 +148,11 @@ impl<'a> Qh<'a> {
     /// # Remarks
     /// * this function will not return the sentinel face, which is the last face in the list of facets.
     ///   To get it, use the [`Qh::all_facets`] function.
-    pub fn facets(&self) -> impl Iterator<Item = Facet> {
+    pub fn facets(&self) -> impl Iterator<Item = Facet<'a>> {
         self.all_facets().filter(|f| !f.is_sentinel())
     }
 
-    pub fn all_vertices(&self) -> impl Iterator<Item = Vertex> {
+    pub fn all_vertices(&self) -> impl Iterator<Item = Vertex<'a>> {
         let mut current = Vertex::from_ptr(
             unsafe { sys::qh_get_vertex_list(self.qh.get() as *mut _) },
             self.dim,
@@ -164,7 +164,7 @@ impl<'a> Qh<'a> {
         }))
     }
 
-    pub fn all_vertices_rev(&self) -> impl Iterator<Item = Vertex> {
+    pub fn all_vertices_rev(&self) -> impl Iterator<Item = Vertex<'a>> {
         let mut current = Vertex::from_ptr(
             unsafe { sys::qh_get_vertex_tail(self.qh.get() as *mut _) },
             self.dim,
@@ -176,7 +176,7 @@ impl<'a> Qh<'a> {
         }))
     }
 
-    pub fn vertices(&self) -> impl Iterator<Item = Vertex> {
+    pub fn vertices(&self) -> impl Iterator<Item = Vertex<'a>> {
         self.all_vertices().filter(|v| !v.is_sentinel())
     }
 
@@ -216,7 +216,7 @@ impl<'a> Qh<'a> {
         unsafe { sys::qh_get_num_vertices(self.qh.get()) as _ }
     }
 
-    pub fn simplices(&self) -> impl Iterator<Item = Facet> {
+    pub fn simplices(&self) -> impl Iterator<Item = Facet<'a>> {
         self.facets().filter(|f| f.simplicial())
     }
 
