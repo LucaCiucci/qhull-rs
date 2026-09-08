@@ -117,11 +117,17 @@ fn main() {
 fn patch_program_source(main_function_name: &str, program_path: &str) -> String {
     let program_source = std::fs::read_to_string(program_path).unwrap();
 
-    let program_source = program_source
+    let mut program_source = program_source
         .replace("int main(", &format!("int {}(", main_function_name))
         .replace("char hidden_options", "static char hidden_options")
         .replace("char qh_prompt", "static char qh_prompt")
         .replace("char prompt", "static char prompt");
+
+    if program_path.contains("rbox_r") {
+        // Fix warnings for unused variables
+        program_source = program_source
+            .replace("  char *command;\n  int command_size;\n", "");
+    }
 
     program_source
 }
