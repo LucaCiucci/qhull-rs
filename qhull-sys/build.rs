@@ -76,12 +76,7 @@ fn main() {
         for (program, main_file) in &programs {
             let program_path = format!("qhull/src/{program}/{main_file}.c");
             let main_function_name = format!("qhull_sys__{}_main", program);
-            let program_source = std::fs::read_to_string(&program_path)
-                .unwrap()
-                .replace("int main(", &format!("int {}(", main_function_name))
-                .replace("char hidden_options", "static char hidden_options")
-                .replace("char qh_prompt", "static char qh_prompt")
-                .replace("char prompt", "static char prompt");
+            let program_source = patch_program_source(&main_function_name, &program_path); 
             // write the modified source to a file in the OUT_DIR
             let program_source_path = out_path.join(format!("{}.c", program));
             let current_content = std::fs::read_to_string(&program_source_path).unwrap_or_default();
@@ -117,4 +112,22 @@ fn main() {
     bindings
         .write_to_file(out_path)
         .expect("Couldn't write bindings!");
+}
+
+fn patch_program_source(main_function_name: &str, program_path: &str) -> String {
+    let program_source = std::fs::read_to_string(program_path).unwrap();
+
+    let mut program_source = program_source
+        .replace("int main(", &format!("int {}(", main_function_name))
+        .replace("char hidden_options", "static char hidden_options")
+        .replace("char qh_prompt", "static char qh_prompt")
+        .replace("char prompt", "static char prompt");
+
+    if program_path.contains("rbox_r") {
+        // Fix warnings for unused variables
+        program_source = program_source
+            .replace("  char *command;\n  int command_size;\n", "");
+    }
+
+    program_source
 }
